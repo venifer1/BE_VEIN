@@ -24,9 +24,10 @@
 
 ---
 
-## 1. 인증/사용자 (v1 유지)
+## 1. 인증/사용자 (v1 유지 + 공개 가입)
 | Method | Path | 설명 |
 |---|---|---|
+| POST | `/auth/signup` | **비로그인 공개 가입**(MONETIZATION 단계2 ①). `{email, password(8~100), signup_source?, signup_referrer?}`. `vein.signup.auto-approve`(기본 true)면 `{status:APPROVED, user, access_token, refresh_token, expires_in}`(자동 로그인), false면 `{status:PENDING, user}`(토큰 없음). 중복 이메일 `409 ALREADY_EXISTS`, 비번 짧으면 `400 VALIDATION_ERROR`. **IP당 시간당 10건**(초과 `429 RATE_LIMITED`) |
 | POST | `/auth/login` | `{email,password}`→`{access_token,refresh_token,expires_in,user}` |
 | POST | `/auth/refresh` | 토큰 회전 |
 | POST | `/auth/logout` | 204 |

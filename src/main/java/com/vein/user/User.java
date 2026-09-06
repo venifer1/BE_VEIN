@@ -40,6 +40,27 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false, insertable = false)
     private Instant createdAt;
 
+    /** Attribution: which content/campaign drove this signup (utm_source). Nullable. */
+    @Column(name = "signup_source", length = 64, updatable = false)
+    private String signupSource;
+
+    /** Attribution: HTTP referrer at signup. Nullable. */
+    @Column(name = "signup_referrer", length = 255, updatable = false)
+    private String signupReferrer;
+
+    /** New public-signup user (MONETIZATION 단계2 ①). Role fixed to TESTER; status set by caller. */
+    public static User create(String email, String passwordHash, String role, UserStatus status,
+                              String signupSource, String signupReferrer) {
+        User u = new User();
+        u.email = email;
+        u.passwordHash = passwordHash;
+        u.role = role;
+        u.status = status;
+        u.signupSource = signupSource;
+        u.signupReferrer = signupReferrer;
+        return u;
+    }
+
     public boolean isApproved() {
         return status == UserStatus.APPROVED;
     }

@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,30 +22,88 @@ import com.vein.user.UserRepository;
 import com.vein.user.UserStatus;
 
 /**
- * Authentication, refresh-token rotation and reuse detection (부록 H-4).
+ * Authentication, refresh-token rotation and reuse detection (부록 H-4),
+ * plus public self-service signup (MONETIZATION 단계2 ①).
  */
 @Service
 public class AuthService {
+
+    /** Role assigned to public signups. Admin roles are provisioned out-of-band. */
+    private static final String DEFAULT_ROLE = "TESTER";
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
+    /** When true, public signups are APPROVED immediately; false restores 승인제(PENDING). */
+    private final boolean autoApprove;
 
     public AuthService(UserRepository userRepository,
                        RefreshTokenRepository refreshTokenRepository,
                        JwtService jwtService,
                        PasswordEncoder passwordEncoder,
-                       AuditService auditService) {
+                       AuditService auditService,
+                       @Value("${vein.signup.auto-approve:true}") boolean autoApprove) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.auditService = auditService;
+        this.autoApprove = autoApprove;
     }
 
     public record AuthResult(String accessToken, String refreshToken, long expiresIn, User user) {
+    }
+
+    /** Signup outcome: {@code auth} is null when the account lands in PENDING (승인제). */
+    public record SignupResult(AuthResult auth, User user) {
+        public boolean approved() {
+            return auth != null;
+        }
+    }
+
+    /**
+     * Register a new account from the public form. Email is unique (case-insensitive);
+     * password is BCrypt-hashed. With {@link #autoApprove} the account is APPROVED and a
+     * token pair is issued (auto-login); otherwise it lands PENDING with no tokens.
+     */
+    @Transactional
+    public SignupResult signup(String email, String rawPw, String source, String referrer, Instant now) {
+        userRepository.findByEmailIgnoreCase(email).ifPresent(u -> {
+            throw new ApiException(ErrorCode.ALREADY_EXISTS, "이미 가입된 이메일입니다.");
+        });
+
+        UserStatus status = autoApprove ? UserStatus.APPROVED : UserStatus.PENDING;
+        User user;
+        try {
+            user = userRepository.saveAndFlush(User.create(email, passwordEncoder.encode(rawPw),
+                    DEFAULT_ROLE, status, trimTo(source, 64), trimTo(referrer, 255)));
+        } catch (DataIntegrityViolationException e) {
+            // Lost the race on the unique(lower(email)) index between check and insert.
+            throw new ApiException(ErrorCode.ALREADY_EXISTS, "이미 가입된 이메일입니다.");
+        }
+
+        auditService.record(user.getId(), "SIGNUP", "user", String.valueOf(user.getId()),
+                Map.of("status", status.name(), "source", source == null ? "" : source));
+
+        if (!user.isApproved()) {
+            return new SignupResult(null, user);
+        }
+        String access = jwtService.issueAccess(user, now);
+        String refresh = issueRefresh(user.getId(), now);
+        return new SignupResult(new AuthResult(access, refresh, jwtService.accessTtlSeconds(), user), user);
+    }
+
+    private static String trimTo(String s, int max) {
+        if (s == null) {
+            return null;
+        }
+        String t = s.strip();
+        if (t.isEmpty()) {
+            return null;
+        }
+        return t.length() > max ? t.substring(0, max) : t;
     }
 
     @Transactional

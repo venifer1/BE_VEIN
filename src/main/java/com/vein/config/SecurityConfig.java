@@ -29,6 +29,7 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/login",
             "/api/v1/auth/refresh",
+            "/api/v1/auth/signup",
             "/api/v1/system/status",
             // Public content endpoints (MONETIZATION 단계2 ②): weekly report serves
             // only aggregated stats — no signal/instrument/candle data. Rate-limited

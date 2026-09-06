@@ -1,6 +1,7 @@
 package com.vein.config;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -17,50 +18,76 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * In-memory per-IP fixed-window rate limit for the public content endpoints
- * (MONETIZATION 단계2 ②: "레이트리밋 필수 — 현재 API 전체에 없다"). Only guards
- * {@code /api/v1/public/**}; every other path passes straight through.
+ * In-memory per-IP fixed-window rate limit for the unauthenticated endpoints that
+ * would otherwise have none (MONETIZATION 단계2 ②·①: "레이트리밋 필수 — 현재 API
+ * 전체에 없다"). Two guarded rules; every other path passes straight through:
+ * <ul>
+ *   <li>{@code /api/v1/public/**} — 60 req/min (report scraping)</li>
+ *   <li>{@code /api/v1/auth/signup} — 10 req/hour (bot signups polluting the DB)</li>
+ * </ul>
  *
- * <p>Dependency-free (no bucket4j): a 60 req/min fixed window per client IP is
- * enough to stop bot scraping of the open report. On breach it writes a 429 with
- * the standard error envelope directly — filters run before the DispatcherServlet
- * so {@code @RestControllerAdvice} would not see the exception.
+ * <p>Dependency-free (no bucket4j). On breach it writes a 429 with the standard error
+ * envelope directly — filters run before the DispatcherServlet so
+ * {@code @RestControllerAdvice} would not see a thrown exception.
  */
 @Component
 @Order(1)
 public class PublicRateLimitFilter extends OncePerRequestFilter {
 
-    private static final String PREFIX = "/api/v1/public/";
-    private static final int MAX_PER_WINDOW = 60;
-    private static final long WINDOW_MS = 60_000L;
     /** Bound the IP map so a stream of distinct source IPs can't grow it without limit. */
-    private static final int MAX_TRACKED_IPS = 10_000;
+    private static final int MAX_TRACKED_IPS = 20_000;
 
+    /** One guarded path rule. {@code exact} matches the URI exactly; else it is a prefix. */
+    private record Rule(String path, boolean exact, int max, long windowMs, int retryAfterSec) {
+        boolean matches(String uri) {
+            return exact ? uri.equals(path) : uri.startsWith(path);
+        }
+    }
+
+    private static final List<Rule> RULES = List.of(
+            new Rule("/api/v1/auth/signup", true, 10, 3_600_000L, 3600),
+            new Rule("/api/v1/public/", false, 60, 60_000L, 60));
+
+    /** Key: "rulePath|clientIp". */
     private final ConcurrentHashMap<String, Window> windows = new ConcurrentHashMap<>();
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
         String uri = req.getRequestURI();
-        if (uri == null || !uri.startsWith(PREFIX)) {
+        Rule rule = ruleFor(uri);
+        if (rule == null) {
             chain.doFilter(req, res);
             return;
         }
-        if (allow(clientIp(req), System.currentTimeMillis())) {
+        long now = System.currentTimeMillis();
+        if (allow(rule.path() + "|" + clientIp(req), rule, now)) {
             chain.doFilter(req, res);
         } else {
-            res.setHeader("Retry-After", "60");
+            res.setHeader("Retry-After", Integer.toString(rule.retryAfterSec()));
             ApiError.write(res, ErrorCode.RATE_LIMITED.status().value(), ErrorCode.RATE_LIMITED.name());
         }
     }
 
-    private boolean allow(String key, long now) {
+    private static Rule ruleFor(String uri) {
+        if (uri == null) {
+            return null;
+        }
+        for (Rule r : RULES) {
+            if (r.matches(uri)) {
+                return r;
+            }
+        }
+        return null;
+    }
+
+    private boolean allow(String key, Rule rule, long now) {
         if (windows.size() > MAX_TRACKED_IPS) {
-            windows.entrySet().removeIf(e -> now - e.getValue().startMs >= WINDOW_MS);
+            windows.entrySet().removeIf(e -> now - e.getValue().startMs >= e.getValue().windowMs);
         }
         Window w = windows.compute(key, (k, cur) ->
-                (cur == null || now - cur.startMs >= WINDOW_MS) ? new Window(now) : cur);
-        return w.count.incrementAndGet() <= MAX_PER_WINDOW;
+                (cur == null || now - cur.startMs >= rule.windowMs()) ? new Window(now, rule.windowMs()) : cur);
+        return w.count.incrementAndGet() <= rule.max();
     }
 
     private static String clientIp(HttpServletRequest req) {
@@ -74,10 +101,12 @@ public class PublicRateLimitFilter extends OncePerRequestFilter {
 
     private static final class Window {
         final long startMs;
+        final long windowMs;
         final AtomicInteger count = new AtomicInteger(0);
 
-        Window(long startMs) {
+        Window(long startMs, long windowMs) {
             this.startMs = startMs;
+            this.windowMs = windowMs;
         }
     }
 }
