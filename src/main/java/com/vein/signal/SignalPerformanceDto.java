@@ -21,9 +21,16 @@ public final class SignalPerformanceDto {
                                 String mfePct, String maePct, String evaluatedAt) {
     }
 
-    /** One row of {@code GET /api/v1/signals/performance/summary}. */
-    public record SummaryRow(String type, String market, String timeframe, String horizon,
-                             long sampleSize, String hitRate, String avgReturnPct,
+    /**
+     * One row of {@code GET /api/v1/signals/performance/summary}.
+     *
+     * <p>{@code bucket} is null for a whole-period aggregate; when the caller asks
+     * for {@code bucket=MONTH} it holds the UTC detection month as {@code yyyy-MM}
+     * and each (type, market, timeframe) appears once per month. Null fields are
+     * omitted from JSON, so existing clients see no change.
+     */
+    public record SummaryRow(String type, String market, String timeframe, String bucket,
+                             String horizon, long sampleSize, String hitRate, String avgReturnPct,
                              String medianReturnPct, String avgMfePct, String avgMaePct) {
     }
 }

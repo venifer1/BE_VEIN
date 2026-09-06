@@ -1,5 +1,6 @@
 package com.vein.signal;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.springframework.security.core.Authentication;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.vein.common.ApiException;
 import com.vein.common.ApiResponse;
 import com.vein.common.ErrorCode;
+import com.vein.common.TimeUtil;
 import com.vein.explain.SignalExplainDto;
 import com.vein.explain.SignalExplainService;
 import com.vein.signal.SignalService.SignalListResult;
@@ -91,14 +93,36 @@ public class SignalController {
     @Operation(summary = "Signal performance summary",
             description = "Aggregate hit-rate / return stats for a horizon, grouped by "
                     + "(type, market, timeframe). hit_rate = % of samples with positive return. "
-                    + "Powers the \"이 패턴 historically X% 적중\" UI. Filters optional; empty when no data.")
+                    + "Powers the \"이 패턴 historically X% 적중\" UI. Optionally bounded by the "
+                    + "signal's detection time (from/to) and split per detection month "
+                    + "(bucket=MONTH) for trend reporting. Filters optional; empty when no data.")
     public ApiResponse<List<SignalPerformanceDto.SummaryRow>> performanceSummary(
             @RequestParam(value = "type", required = false) SignalType type,
             @RequestParam(value = "market", required = false) String market,
             @RequestParam(value = "timeframe", required = false) String timeframe,
             @Parameter(description = "1h|4h|1d|3d|7d (default 1d)")
-            @RequestParam(value = "horizon", required = false, defaultValue = "1d") String horizon) {
-        return ApiResponse.of(performanceService.summary(type, market, timeframe, horizon));
+            @RequestParam(value = "horizon", required = false, defaultValue = "1d") String horizon,
+            @Parameter(description = "Inclusive lower bound on detected_at, ISO-8601 UTC")
+            @RequestParam(value = "from", required = false) String from,
+            @Parameter(description = "Exclusive upper bound on detected_at, ISO-8601 UTC")
+            @RequestParam(value = "to", required = false) String to,
+            @Parameter(description = "MONTH to split each group per detection month; omit for whole period")
+            @RequestParam(value = "bucket", required = false) String bucket) {
+        return ApiResponse.of(performanceService.summary(type, market, timeframe, horizon,
+                parseInstant(from, "from"), parseInstant(to, "to"), bucket));
+    }
+
+    /** ISO-8601 UTC query param → Instant; null when absent, 400 when malformed. */
+    private Instant parseInstant(String iso, String field) {
+        if (iso == null || iso.isBlank()) {
+            return null;
+        }
+        try {
+            return TimeUtil.parseIso(iso);
+        } catch (RuntimeException e) {
+            throw new ApiException(ErrorCode.INVALID_QUERY,
+                    "Invalid ISO-8601 timestamp for '" + field + "': " + iso);
+        }
     }
 
     private Long currentUserId() {

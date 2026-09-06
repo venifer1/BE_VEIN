@@ -3,6 +3,8 @@ package com.vein.signal;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.YearMonth;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -219,22 +221,44 @@ public class SignalPerformanceService {
     }
 
     /**
-     * Aggregate hit-rate / return stats for the given horizon, grouped by
-     * (type, market, timeframe). Filters optional. Returns empty list (never
-     * 500s) when there is no data. Powers the "이 패턴 historically X% 적중" UI.
+     * Whole-period aggregate over every recorded signal — the shape the in-app
+     * "이 패턴 historically X% 적중" UI uses.
      */
     @Transactional(readOnly = true)
     public List<SignalPerformanceDto.SummaryRow> summary(SignalType type, String market,
                                                          String timeframe, String horizon) {
+        return summary(type, market, timeframe, horizon, null, null, null);
+    }
+
+    /**
+     * Aggregate hit-rate / return stats for the given horizon, grouped by
+     * (type, market, timeframe) and optionally by detection month.
+     *
+     * <p>{@code from}/{@code to} bound the signal's detection time (half-open:
+     * {@code from <= detectedAt < to}); either may be null for an open bound.
+     * {@code bucket} = {@code "MONTH"} splits each group per UTC detection month
+     * so callers can chart a trend rather than a single lifetime number; null or
+     * blank keeps the whole-period aggregate.
+     *
+     * <p>Filters are optional and an empty result is returned (never a 500) when
+     * there is no matching data.
+     */
+    @Transactional(readOnly = true)
+    public List<SignalPerformanceDto.SummaryRow> summary(SignalType type, String market,
+                                                         String timeframe, String horizon,
+                                                         Instant from, Instant to, String bucket) {
         String marketFilter = (market == null || market.isBlank()) ? null : market.toUpperCase();
         String h = (horizon == null || horizon.isBlank()) ? PerformanceHorizon.D1.code() : horizon;
+        boolean byMonth = isMonthBucket(bucket);
 
-        List<SummaryRow> rows = performanceRepository.summaryRows(h, type, marketFilter, timeframe);
+        List<SummaryRow> rows = performanceRepository.summaryRows(h, type, marketFilter, timeframe,
+                from, to);
 
         // Group in Java so a null-market group is handled cleanly.
         Map<String, List<SummaryRow>> groups = new LinkedHashMap<>();
         for (SummaryRow r : rows) {
-            String key = r.getType() + "|" + r.getMarket() + "|" + r.getTimeframe();
+            String key = r.getType() + "|" + r.getMarket() + "|" + r.getTimeframe()
+                    + "|" + (byMonth ? monthOf(r.getDetectedAt()) : "");
             groups.computeIfAbsent(key, k -> new ArrayList<>()).add(r);
         }
 
@@ -279,6 +303,7 @@ public class SignalPerformanceService {
                     head.getType().name(),
                     head.getMarket(),
                     head.getTimeframe(),
+                    byMonth ? monthOf(head.getDetectedAt()) : null,
                     h,
                     n,
                     str(hitRate),
@@ -287,8 +312,26 @@ public class SignalPerformanceService {
                     str(avgMfe),
                     str(avgMae)));
         }
-        out.sort(Comparator.comparingLong(SignalPerformanceDto.SummaryRow::sampleSize).reversed());
+        if (byMonth) {
+            // Chronological, then the biggest sample first inside each month.
+            out.sort(Comparator.comparing(SignalPerformanceDto.SummaryRow::bucket)
+                    .thenComparing(Comparator.comparingLong(
+                            SignalPerformanceDto.SummaryRow::sampleSize).reversed()));
+        } else {
+            out.sort(Comparator.comparingLong(
+                    SignalPerformanceDto.SummaryRow::sampleSize).reversed());
+        }
         return out;
+    }
+
+    private static boolean isMonthBucket(String bucket) {
+        return bucket != null && "MONTH".equalsIgnoreCase(bucket.trim());
+    }
+
+    /** UTC detection month as {@code yyyy-MM}. */
+    private static String monthOf(Instant detectedAt) {
+        return detectedAt == null ? null
+                : YearMonth.from(detectedAt.atZone(ZoneOffset.UTC)).toString();
     }
 
     private BigDecimal scaledAvg(BigDecimal sum, int count) {
