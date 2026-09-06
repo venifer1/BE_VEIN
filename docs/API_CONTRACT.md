@@ -79,6 +79,15 @@
 ## 8. 시스템 — `ops`
 | GET `/system/status` | provider별 freshness(upbit/binance/coingecko/defillama/yfinance/pykrx/bybit/telegram/bloomberg), scanner status, build version |
 
+## 9. 공개 콘텐츠 (비로그인) — `report`
+| Method | Path | 설명 |
+|---|---|---|
+| GET | `/public/reports/weekly` | 주간 패턴 성과 리포트(JSON). 누적 신호 성과에서 **패턴×시장×봉** 단위 적중률·평균/중앙 수익률 집계. `?window_days=1..365(기본 90) & horizon=1h\|4h\|1d\|3d\|7d(기본 1d)`. 응답: `overall{sample_size,hit_rate,avg_return_pct}`, `rows[]{type,market,timeframe,sample_size,hit_rate,avg_return_pct,median_return_pct}`(표본순), `highlights[]`(표본 5+ 최고/최저), `disclaimer` |
+| GET | `/public/reports/weekly.md` | 동일 리포트 **Markdown 본문**(블로그·SNS 발행용, `text/markdown`) |
+
+- **비로그인 공개** — `SecurityConfig`에서 `/api/v1/public/**` permitAll. **개별 신호·종목·원시 캔들은 미노출**(가공 통계만) — 법적 안전지대와 상업 논리가 같은 방향(MONETIZATION 단계2 ②).
+- **레이트리밋** — `PublicRateLimitFilter`: IP당 **60 req/min** 고정창, 초과 시 `429 RATE_LIMITED`(+`Retry-After: 60`). 현재 API 전체 중 이 경로에만 적용.
+
 ---
 
 ## DB 추가 테이블 (Flyway V6+, 기존 V1~V5 유지)

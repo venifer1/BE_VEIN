@@ -45,6 +45,9 @@ public enum ErrorCode {
     // System
     STATUS_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Status unavailable"),
 
+    // Public / rate limit
+    RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "Too many requests"),
+
     // Generic
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal error"),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "Validation error");

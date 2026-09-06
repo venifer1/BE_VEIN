@@ -32,11 +32,11 @@ public interface SignalPerformanceRepository extends JpaRepository<SignalPerform
               join PatternSignal s on s.id = p.signalId
             where p.horizon = :horizon
               and p.returnPct is not null
-              and (:type is null or s.type = :type)
-              and (:market is null or s.market = :market)
-              and (:timeframe is null or s.timeframe = :timeframe)
-              and (:from is null or s.detectedAt >= :from)
-              and (:to is null or s.detectedAt < :to)
+              and (cast(:type as string) is null or s.type = :type)
+              and (cast(:market as string) is null or s.market = :market)
+              and (cast(:timeframe as string) is null or s.timeframe = :timeframe)
+              and (cast(:from as timestamp) is null or s.detectedAt >= :from)
+              and (cast(:to as timestamp) is null or s.detectedAt < :to)
             """)
     List<SummaryRow> summaryRows(@Param("horizon") String horizon,
                                  @Param("type") SignalType type,

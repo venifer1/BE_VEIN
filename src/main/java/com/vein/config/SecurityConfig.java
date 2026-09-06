@@ -30,6 +30,10 @@ public class SecurityConfig {
             "/api/v1/auth/login",
             "/api/v1/auth/refresh",
             "/api/v1/system/status",
+            // Public content endpoints (MONETIZATION 단계2 ②): weekly report serves
+            // only aggregated stats — no signal/instrument/candle data. Rate-limited
+            // per IP by PublicRateLimitFilter.
+            "/api/v1/public/**",
             // Public market-price WebSocket/STOMP handshake (SockJS endpoints under /ws).
             // Carries only public market data, so the handshake is left open.
             "/ws/**",
