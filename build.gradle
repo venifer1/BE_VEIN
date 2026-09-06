@@ -1,0 +1,106 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.5'
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'com.vein'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Test).configureEach {
+    systemProperty 'file.encoding', 'UTF-8'
+}
+
+ext {
+    resilience4jVersion = '2.2.0'
+    shedlockVersion = '5.16.0'
+    mapstructVersion = '1.6.2'
+    springdocVersion = '2.6.0'
+}
+
+dependencies {
+    // --- 부록 A-2 core ---
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+    runtimeOnly   'org.postgresql:postgresql'
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly   'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly   'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // --- additional required deps ---
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+    implementation "io.github.resilience4j:resilience4j-spring-boot3:${resilience4jVersion}"
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation "net.javacrumbs.shedlock:shedlock-spring:${shedlockVersion}"
+    implementation "net.javacrumbs.shedlock:shedlock-provider-redis-spring:${shedlockVersion}"
+    implementation 'nl.martijndwars:web-push:5.1.2'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    implementation 'org.apache.httpcomponents:httpasyncclient:4.1.5'
+    implementation 'org.bitbucket.b_c:jose4j:0.9.6'
+
+    // MapStruct + Lombok
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // --- HTTP clients & JSON for external providers (phase 2/3 reuse) ---
+    // Spring's RestClient (spring-web) is already on the classpath via starter-web.
+    // Jackson (jackson-databind) likewise via starter-web. No extra HTTP lib needed.
+
+    // --- caching (provider responses, indices) ---
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+
+    // --- Phase 3: RSS (Bloomberg) parsing via Jackson XML (managed by Boot BOM) ---
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+
+    // --- tests ---
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:junit-jupiter'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.testcontainers:testcontainers-bom:1.20.3'
+    }
+}
+
+// Copy golden fixtures from repo into test resources for portable golden tests.
+tasks.register('copyGoldenFixtures', Copy) {
+    from "${projectDir}/../golden_fixtures"
+    into "${projectDir}/src/test/resources/golden_fixtures"
+    include '**/*.json'
+}
+
+processTestResources.dependsOn 'copyGoldenFixtures'
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "schema_version": 1,
+    "description": "KR code(6-digit or .KS/.KQ) -> theme classification overrides for ThemeSectorTab",
+    "fields": [
+      "theme",
+      "source",
+      "confidence"
+    ]
+  },
+  "items": {
+    "005930": {
+      "theme": "\ubc18\ub3c4\uccb4",
+      "source": "manual_json",
+      "confidence": 0.99
+    },
+    "000660": {
+      "theme": "\ubc18\ub3c4\uccb4",
+      "source": "manual_json",
+      "confidence": 0.99
+    }
+  }
+}

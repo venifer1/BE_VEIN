@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "schema_version": 1,
+    "description": "Coin symbol -> theme classification overrides for ThemeSectorTab",
+    "fields": [
+      "theme",
+      "source",
+      "confidence"
+    ]
+  },
+  "items": {
+    "BTC": {
+      "theme": "L1/\uacb0\uc81c",
+      "source": "manual_json",
+      "confidence": 0.99
+    },
+    "ETH": {
+      "theme": "L1/\uc2a4\ub9c8\ud2b8\ucee8\ud2b8\ub799\ud2b8",
+      "source": "manual_json",
+      "confidence": 0.99
+    }
+  }
+}

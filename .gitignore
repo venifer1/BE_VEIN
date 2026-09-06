@@ -1,0 +1,28 @@
+# Gradle
+.gradle/
+build/
+bin/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Java
+*.class
+
+# Spring Boot
+*.pid
+spring-boot.pid
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# env / secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# OS
+.DS_Store
+Thumbs.db

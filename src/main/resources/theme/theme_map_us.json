@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "schema_version": 1,
+    "description": "US ticker -> theme classification overrides for ThemeSectorTab",
+    "fields": [
+      "theme",
+      "source",
+      "confidence"
+    ]
+  },
+  "items": {
+    "NVDA": {
+      "theme": "\ubc18\ub3c4\uccb4/AI",
+      "source": "manual_json",
+      "confidence": 0.99
+    },
+    "MSFT": {
+      "theme": "\uc18c\ud504\ud2b8\uc6e8\uc5b4/\ud074\ub77c\uc6b0\ub4dc",
+      "source": "manual_json",
+      "confidence": 0.99
+    }
+  }
+}

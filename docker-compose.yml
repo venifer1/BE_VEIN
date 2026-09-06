@@ -1,0 +1,21 @@
+# 로컬 인프라(PostgreSQL + Redis).
+# 자격증명은 같은 디렉터리의 .env 에서 주입된다 (.env.example 복사 후 값 채우기).
+# .env 가 없으면 `docker compose up` 이 변수 미설정으로 실패한다 — 의도된 fail-fast.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required (see .env.example)}
+      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME is required (see .env.example)}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required (see .env.example)}
+    ports:
+      - "5432:5432"
+    volumes:
+      - vein_pgdata:/var/lib/postgresql/data
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+volumes:
+  vein_pgdata:

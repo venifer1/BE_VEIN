@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-06-12T16:28:46.918163+00:00",
+  "python_commit": "0733813",
+  "count": 1,
+  "fixtures": [
+    {
+      "id": "krw_btc_1d",
+      "candles": 200,
+      "abc": 0,
+      "triangle": 0
+    }
+  ]
+}

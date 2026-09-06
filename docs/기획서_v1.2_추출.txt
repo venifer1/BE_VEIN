@@ -1,0 +1,1125 @@
+베인 개발 기획서
+Mobile-first Trading Intelligence Platform · Spring Boot 기반 · v1.2
+작성일: 2026-06-09
+문서 목적: 1인 개발자가 Claude Code/Figma AI를 활용해 MVP와 핵심 엔진 개발을 진행할 수 있도록 제품 정의, 엔진 설계, 데이터 흐름, API, ERD, 로드맵을 통합 정리한다.
+0. 문서 정보
+1. 프로젝트 개요
+1.1 한 줄 정의
+베인(VEIN)은 암호화폐, 미국주식, 국내주식 시장 데이터를 통합 수집하여 기술적 패턴 탐지, 조건검색, 실시간 스캐닝, 뉴스 분석을 통해 매매 후보를 자동 발굴하는 모바일 중심 트레이딩 인텔리전스 플랫폼이다.
+1.2 제품 비전
+사용자가 직접 종목을 찾는 시간을 줄이고, 시스템이 먼저 매매 후보를 제안한다.
+단순 차트/시세 조회가 아니라 패턴·조건·뉴스·미시지표를 결합한 실행형 신호를 제공한다.
+개인투자자가 모바일에서 기관형 터미널의 핵심 의사결정 흐름을 가볍게 사용할 수 있게 한다.
+1.3 핵심 전략
+초기에는 모든 자산을 깊게 다루기보다, 코인/주식의 빠른 탐색과 알림 중심으로 검증한다.
+무료 사용자는 시세·차트·기본 검색으로 유입시키고, PRO는 고급 조건검색·패턴 탐지·실시간 알림으로 전환한다.
+1인 개발 기준으로 Next.js 모바일 웹/PWA/웹뷰 앱을 우선 출시하고, Flutter는 검증 후 전환한다.
+Spring Boot 단일 서버로 시작하되 Scanner/Notification/Backtest 모듈은 분리 가능한 구조로 설계한다.
+1.4 제품 포지셔닝
+2. 서비스 범위와 MVP 전략
+2.1 플랫폼 전략
+1차: Next.js 모바일 웹 + PWA
+2차: 웹뷰 앱 패키징
+3차: 사용자 수와 푸시/네이티브 UX 요구가 커질 경우 Flutter 앱 전환
+관리자도 모바일 반응형 웹으로 개발
+2.2 MVP 우선순위
+3. 모바일 UX/IA 설계
+3.1 하단 네비게이션
+3.2 핵심 사용자 플로우
+앱 실행 → 홈에서 관심종목/급등락 확인 → 종목 상세 → 차트 확인 → 조건/패턴 알림 설정 → 알림 수신 → 재방문
+검색 탭 → 조건검색 선택 → RSI/거래량/이평 조건 설정 → 결과 확인 → 검색식 저장 → PRO 구독 유도
+스캐너 탭 → 패턴 후보 확인 → 후보 점수/설명 확인 → 차트 오버레이 확인 → 즐겨찾기 또는 알림 저장
+AI 어시스턴트 → “지금 삼각수렴 후보 찾아줘” → 검색식/패턴 엔진 실행 → 결과와 이유 요약
+4. 기능 상세 요구사항
+4.1 시세/마켓
+시장별 탭: 한국, 미국, 코인, ETF, FX, 원자재
+종목 카드: 현재가, 등락률, 거래량, 거래대금, 시가총액
+리스트: 급등, 급락, 거래량 급증, 52주 신고가, 관심종목
+초기에는 실시간이 어려우면 지연시세/주기 갱신으로 시작
+4.2 종목 상세
+상단 가격 영역
+TradingView 차트 또는 자체 캔들 차트
+기술지표 요약
+뉴스/공시
+관련 조건검색 결과
+패턴 탐지 결과와 점수
+종목별 커뮤니티 탭
+4.3 조건검색기
+조건식 빌더 UI
+조건식 저장/수정/삭제
+시장/섹터/거래대금 필터
+검색 결과 정렬
+PRO 전용 조건 잠금 처리
+4.4 알림
+가격 돌파/하락 알림
+조건검색 충족 알림
+급등락 알림
+뉴스 키워드 알림
+패턴 탐지 알림
+알림 중복 방지와 쿨다운 정책
+4.5 뉴스/AI
+뉴스 소스 수집
+종목 태깅
+AI 3줄 요약
+긍정/중립/부정 분류
+AI 비용 제한을 위한 캐싱
+4.6 커뮤니티
+게시글/댓글/좋아요
+종목별 채팅
+신고/차단
+금칙어
+운영자 삭제/숨김 처리
+5. 데이터 처리 파이프라인
+5.1 데이터 수집 단계
+5.2 전처리 및 상태 생성
+시장별 데이터 분리: KR, US, CRYPTO, ETF, FX, COMMODITY
+종목별 현재가, 고가/저가, 거래 빈도, 스프레드, 거래량 변화율 생성
+호가 잔량 불균형, TPS, 미세 변동성 등 실시간 미시지표 생성
+RSI, MACD, 이동평균선, 볼린저밴드 등 기술지표 계산
+뉴스/속보는 종목 태깅, 중복 제거, 중요도 분류 후 저장
+5.3 처리 단계 요약
+Raw Data 수집
+정규화 및 시장별 분리
+기술지표 및 미시지표 생성
+조건검색/패턴 탐지 실행
+점수화 및 필터링
+알림/결과 저장
+사용자 화면과 어드민에 노출
+6. Condition Engine 설계
+6.1 지원 조건 v1
+6.2 조건식 저장 JSON 예시
+{
+  "market": "US",
+  "timeframe": "1d",
+  "logic": "AND",
+  "conditions": [
+    {"indicator": "RSI", "period": 14, "operator": "<", "value": 30},
+    {"indicator": "VOLUME_RATIO", "period": 20, "operator": ">", "value": 3},
+    {"indicator": "PRICE", "operator": ">", "target": "MA20"}
+  ]
+}
+6.3 실행 방식
+Batch Scanner: 1분/5분/일봉 기준으로 대상 종목을 주기 스캔
+On-demand Scanner: 사용자가 직접 검색 실행 시 즉시 계산
+Result Cache: 동일 조건식은 짧은 시간 Redis 캐싱
+Alert Evaluator: 저장된 조건식 중 알림 활성화된 것만 별도 평가
+초기 제한: 전체 종목이 아닌 주요 시장/거래대금 상위/관심종목 중심
+7. Pattern Engine 설계
+7.1 개요
+Pattern Engine은 캔들 데이터에서 국소 고점/저점을 탐지한 뒤, 규칙 기반으로 가격 구조를 판별하여 매매 후보를 추출하는 베인의 핵심 차별화 엔진이다.
+7.2 공통 탐지 프로세스
+캔들 데이터 수집
+국소 고점(Local High) 탐지
+국소 저점(Local Low) 탐지
+패턴 후보 생성
+규칙 검증
+Pattern Score 계산
+사용자 화면에 후보 노출
+7.3 ABC 검색기
+목적: 조정 파동 구조를 자동 탐지해 C 예상가 근처 종목 선별
+검사 항목: 0→A 하락폭, A→B 반등 비율, B→C 진행 여부, 0 돌파 여부, A 이탈 여부
+결과 상태: 진행중, 완료 임박, 실패 패턴
+7.4 고점판독기
+ABC 알고리즘을 가격 축 반전 방식으로 재사용
+상승 추세의 고점 후보, 상승 피로도, 분배 가능성을 탐지
+거래량 감소, 고점 갱신 실패, 되돌림 비율을 함께 평가
+7.5 삼각수렴 검색기
+최근 고점 3개와 저점 3개의 수렴 구조 분석
+추세선 기울기와 수렴 폭 감소율 계산
+대칭/상승/하락 삼각형으로 분류
+7.6 이말올 검색기
+단기 반등 가능성이 높은 종목 탐지
+2개 연속 양봉, 볼린저 하단 접촉, 거래량 증가, 이동평균선 회복, RSI 반등 조건 적용
+8. Scanner Engine 설계
+8.1 틱띄기 스캐너
+틱띄기 스캐너는 실시간 체결과 호가 데이터를 기반으로 스캘핑 적합 종목을 점수화해 랭킹으로 제공한다.
+8.2 Scalping Score 기본식
+Scalping Score = TPS Score + Spread Score + Orderbook Score + Volatility Score + Trade Strength Score
+초기에는 각 항목 20점 만점, 총 100점 기준으로 설계하고 운영 데이터에 따라 가중치를 조정한다.
+9. Pattern Score Engine
+9.1 목적
+여러 패턴 후보 중 어떤 종목을 상위에 노출할지 결정하기 위해 정량 점수 체계를 둔다. 점수는 후보의 완성도, 거래량, 추세, 변동성, 뉴스 모멘텀을 종합한다.
+9.2 기본 점수 체계
+9.3 표시 예시
+BTC  92점
+- ABC 진행률 95%
+- 거래량 +320%
+- RSI 34
+- 20일선 지지
+- ETF 관련 긍정 속보 감지
+10. Explain Engine
+10.1 목적
+사용자가 결과를 신뢰할 수 있도록 “왜 이 종목이 잡혔는지”를 짧고 명확하게 설명한다. 점수만 보여주는 것이 아니라 조건 충족 근거를 함께 보여준다.
+10.2 설명 구성
+탐지된 패턴명
+핵심 조건 충족 여부
+점수 세부 항목
+주의 요인
+다음 확인 포인트
+10.3 예시
+SOL이 삼각수렴 후보로 탐지되었습니다.
+- 최근 고점 3개는 낮아지고 저점 3개는 높아지는 대칭 수렴 구조입니다.
+- 거래량은 평균 대비 180% 증가했습니다.
+- 현재가는 상단 추세선까지 1.2% 남아 있습니다.
+- 돌파 실패 시 하단 이탈 위험이 있습니다.
+11. Backtest Engine
+11.1 목적
+조건검색 또는 패턴 탐지 전략의 과거 성과를 검증하여 사용자의 신뢰와 PRO 전환율을 높인다.
+11.2 백테스트 입력값
+시장: 코인/미국주식/국내주식
+기간: 3개월/1년/3년/5년
+전략: 조건식 또는 패턴 유형
+진입 기준: 신호 발생가, 다음 봉 시가, 종가
+청산 기준: 목표 수익률, 손절률, 기간 청산, 반대 신호
+수수료/슬리피지
+11.3 결과 지표
+11.4 MVP 범위
+초기에는 일봉 기준 단순 백테스트부터 제공
+조건검색 저장식에 대해 “과거 성과 보기” 버튼 제공
+분봉/틱 백테스트는 데이터 비용과 성능 문제로 후순위
+12. Strategy Marketplace
+12.1 목적
+사용자가 만든 조건검색식과 패턴 전략을 공유하고 복사할 수 있게 하여 네트워크 효과를 만든다.
+12.2 주요 기능
+전략 공개/비공개
+전략 복사
+좋아요/북마크
+전략별 백테스트 결과 표시
+작성자 프로필
+신고 및 운영자 숨김 처리
+12.3 전략 카드 예시
+ABC 눌림목 전략
+작성자: venifer
+승률: 67%
+평균 수익률: 11.4%
+좋아요: 812
+복사하기
+13. AI Trading Assistant
+13.1 목적
+사용자가 자연어로 시장 상황, 종목 분석, 조건검색 실행, 패턴 탐색을 요청할 수 있게 한다.
+13.2 주요 질문 예시
+오늘 BTC 왜 올라?
+지금 삼각수렴 후보 찾아줘
+거래량 급증하면서 RSI 낮은 코인 찾아줘
+내 관심종목 중 위험한 종목 있어?
+ABC 패턴 완료 임박한 미국주식 보여줘
+13.3 응답 구조
+결론 요약
+근거 데이터
+탐지된 패턴/조건
+주의사항
+다음 행동 버튼: 차트 보기, 알림 설정, 전략 저장
+14. Replay Engine
+14.1 목적
+특정 과거 시점의 차트, 뉴스, 패턴 탐지 결과를 재현하여 전략 학습과 검증에 활용한다.
+14.2 기능
+과거 날짜 선택
+당시 차트 재현
+당시 뉴스/속보 표시
+당시 조건검색 결과 표시
+내 전략 적용 시 결과 시뮬레이션
+14.3 우선순위
+Replay Engine은 데이터 저장 비용이 크므로 MVP에는 포함하지 않고, 백테스트 엔진 이후 고급 PRO+ 기능으로 검토한다.
+15. TVL / 유통량 / 테마 엔진
+DefiLlama, CoinGecko 등에서 TVL/유통량/섹터 데이터를 수집
+TVL 증가율, 락업 해제 일정, 유통량 변화, 섹터 자금 흐름 제공
+기술적 패턴과 온체인 지표를 함께 노출하여 보조 판단 정보 제공
+16. 시스템 아키텍처
+16.1 기술 스택
+16.2 백엔드 모듈 구조
+com.vein
+ ├─ auth
+ ├─ user
+ ├─ subscription
+ ├─ payment
+ ├─ market
+ ├─ quote
+ ├─ chart
+ ├─ indicator
+ ├─ condition
+ ├─ pattern
+ ├─ scanner
+ ├─ scoring
+ ├─ explain
+ ├─ backtest
+ ├─ alert
+ ├─ notification
+ ├─ news
+ ├─ community
+ ├─ admin
+ ├─ audit
+ └─ common
+16.3 확장 전략
+초기: 단일 Spring Boot 애플리케이션
+트래픽 증가: scanner-worker, notification-worker, backtest-worker 분리
+데이터 증가: 캔들 데이터 파티셔닝 및 오래된 데이터 아카이빙
+실시간 증가: Redis Pub/Sub 또는 Kafka 도입 검토
+17. 데이터 모델 초안 (ERD)
+18. API 명세 초안
+19. 관리자(Admin) 상세
+모바일 기반 반응형 웹으로 개발한다.
+권한은 SUPER_ADMIN, ADMIN, MODERATOR로 분리한다.
+MVP에서는 본인용 SUPER_ADMIN만 있어도 되지만 DB 구조는 role 기반으로 설계한다.
+20. 보안/권한/법적 고지
+20.1 보안 요구사항
+Spring Security + JWT Access Token + Refresh Token
+비밀번호 BCrypt 암호화
+Refresh Token DB/Redis 저장 및 폐기 처리
+Rate Limit: 로그인, 조건검색 실행, AI 요청, 알림 생성
+Admin API IP 제한 또는 2FA 검토
+모든 주요 행위 audit_logs 저장
+20.2 금융/법적 고지
+본 서비스는 투자 참고용 정보 제공 서비스이며 투자 권유가 아님을 명시
+투자 판단과 책임은 사용자 본인에게 있음을 명시
+시세 데이터 지연 여부와 출처를 화면에 표시
+뉴스/AI 요약의 오류 가능성 고지
+백테스트 결과는 미래 수익을 보장하지 않음을 고지
+개인정보 처리방침, 이용약관, 유료서비스 약관 준비
+21. KPI와 어드민 지표
+DAU/MAU
+가입 전환율
+관심종목 등록률
+조건검색 실행 수
+조건검색 저장 수
+패턴 탐지 결과 클릭률
+Explain 버튼 클릭률
+알림 생성 수
+알림 클릭률
+PRO 전환율
+구독 유지율
+AI 요청 수와 비용
+API 오류율
+스캐너 처리 시간
+백테스트 실행 수
+전략 복사 수
+22. 개발 로드맵
+23. Claude Code 개발 지시용 기준
+23.1 우선 개발 순서
+Spring Boot 프로젝트 생성
+PostgreSQL 연결 및 Flyway 적용
+User/Auth/Subscription 기본 엔티티 구현
+Stock/Quote/Candle 엔티티 구현
+Watchlist API 구현
+ConditionRule JSON 구조 구현
+Scanner 실행 API 구현
+PatternResult/ScoreSnapshot 구조 구현
+Explain Engine 기본 템플릿 구현
+Alert/Notification 구현
+Admin API 구현
+Next.js 모바일 UI 연결
+23.2 개발 원칙
+API 응답은 공통 포맷으로 통일한다.
+모든 시간은 UTC 저장, 화면에서 사용자 지역 시간으로 표시한다.
+외부 API 호출은 service 계층에서 분리하고 mock provider를 둔다.
+조건검색/패턴 엔진은 DB에 강하게 종속시키지 말고 독립 클래스로 작성한다.
+Admin 기능은 사용자 기능과 URL/권한을 분리한다.
+점수 계산식은 코드에 하드코딩하지 말고 설정값으로 분리한다.
+24. 다음에 결정해야 할 사항
+브랜드 표기: 사용자 노출은 베인(VEIN), 코드/도메인은 vein으로 통일. 기존 Veni Invest ABC는 레거시 데스크톱 프로젝트명으로만 유지
+MVP 시장 범위: 코인 우선. 미국/국내주식은 조회와 일봉 패턴 검증부터 단계적으로 추가
+시세 데이터 공급사 후보와 비용
+무료/PRO/PRO+ 가격 및 제한 정책
+웹뷰 앱 우선 출시 여부
+결제 PG: 토스페이먼츠/포트원/인앱결제
+뉴스 소스와 AI 요약 범위
+Pattern Score 가중치 초기값
+백테스트 수수료/슬리피지 기본값
+전략마켓 공개 범위와 운영 정책
+25. 현재 구현 자산과 기준선
+25.1 현행 레퍼런스 구현
+현재 C:\veni_invest_abc에는 Tkinter 기반 Windows 데스크톱 애플리케이션이 존재한다. 이 구현은 신규 모바일 서비스의 최종 제품 코드가 아니라, 데이터 공급사 연동 방식과 탐지 규칙을 검증한 레퍼런스 구현으로 취급한다.
+구현 완료: 통합 터미널, 업비트·미국·코스피·코스닥 종목 검색과 차트, 관심종목
+구현 완료: ABC 조정, 고점판독, 삼각수렴, 이말올 패턴 탐지와 차트 오버레이
+구현 완료: 업비트 호가·체결 기반 틱띄기 스캐너, 펀딩비 차익 모니터
+구현 완료: Telegram/Bloomberg 속보, TVL, 유통량, 테마·섹터 모니터링
+구현 완료: MySQL 선택 저장, TTS 알림, Windows EXE 및 설치 프로그램 빌드
+미구현: 회원·권한, 구독·결제, 모바일 웹, 조건식 빌더, 푸시 알림함, 관리자 웹, Pattern Score, Explain, 백테스트, 전략마켓, AI 어시스턴트, Replay
+25.2 재사용 원칙
+재사용 대상은 UI 코드가 아니라 탐지 규칙, 계산식, 외부 API 계약, 예외 처리 경험, 테스트 데이터다.
+Python 탐지 결과를 골든 데이터셋으로 고정하고 Java 엔진이 동일 입력에서 허용 오차 내 동일 결과를 내는지 회귀 테스트한다.
+데스크톱 MySQL 스키마를 신규 PostgreSQL 운영 스키마로 그대로 복제하지 않는다. 도메인 모델을 새로 정의하고 필요한 데이터만 마이그레이션한다.
+신규 서비스와 레거시 앱의 동시 쓰기(dual write)는 금지한다. 전환 기간에는 레거시를 읽기 전용 검증 도구로 사용한다.
+26. v0.5 제품 범위 확정
+26.1 MVP 결정사항
+브랜드는 베인(VEIN)으로 통일하고, 기존 Veni Invest ABC 명칭은 레거시 저장소와 빌드 산출물 식별에만 사용한다.
+MVP 핵심 시장은 코인이다. 업비트 KRW와 바이낸스 USDT를 우선 지원한다.
+미국주식과 국내주식은 MVP에서 종목 검색·지연 시세·일봉 차트·기본 패턴 결과까지만 허용하며, 데이터 계약 전에는 유료 핵심 기능으로 홍보하지 않는다.
+P0는 회원, 관심종목, 코인 시세·차트, 조건검색 v1, ABC·삼각수렴 기본 탐지, 알림, 운영 로그다.
+P1은 Pattern Score, Explain, 틱띄기 스캐너, 구독·결제, 기본 Admin이다.
+뉴스 AI 요약, 커뮤니티, TVL·유통량 고도화, 백테스트, 전략마켓, AI 어시스턴트, Replay는 MVP 출시 조건에서 제외한다.
+26.2 MVP 성공 기준
+가입 사용자가 관심종목을 등록하고 3분 이내에 조건 또는 패턴 알림 1개를 만들 수 있다.
+알림 생성 사용자 중 7일 내 재방문율, 패턴 결과 클릭률, 알림 클릭률을 핵심 검증 지표로 본다.
+유료 전환 전 최소 2주간 탐지 정확도, 중복 알림률, 데이터 누락률을 운영 데이터로 측정한다.
+27. 엔진 이관과 시스템 설계 보강
+27.1 데이터 계약
+모든 공급사는 MarketDataProvider 인터페이스 뒤에 격리한다. 공급사 응답 DTO와 내부 Quote/Candle 모델을 분리한다.
+종목 식별자는 내부 instrument_id를 기준으로 하고 UPBIT:KRW-BTC, BINANCE:BTCUSDT처럼 공급사 심볼을 별도 매핑한다.
+캔들은 UTC 시작 시각, 시장, 타임프레임, OHLCV, 공급사, 수집 시각을 필수 필드로 둔다.
+외부 API 실패 시 타임아웃, 재시도, 지수 백오프, 서킷 브레이커, 최근 정상값 유지 정책을 공급사별로 정의한다.
+27.2 Pattern Engine 이관
+1단계: Python 엔진에서 대표 성공·실패·경계 사례를 JSON fixture로 추출한다.
+2단계: ABC와 삼각수렴부터 순수 Java 라이브러리로 포팅하고 DB·네트워크 의존성을 제거한다.
+3단계: 골든 테스트, 파라미터 경계 테스트, 미래 데이터 참조 방지 테스트를 통과한 뒤 Scanner에 연결한다.
+4단계: 이말올, 고점판독, 틱띄기 점수 순으로 이관한다.
+Pattern Score와 Explain은 탐지 엔진과 분리한다. 탐지 결과가 먼저 사실을 만들고, 점수와 설명은 그 결과를 소비한다.
+27.3 운영 경계
+Spring Boot API 서버는 요청 처리와 사용자 도메인을 담당하고, 주기 스캔은 동일 코드베이스의 별도 worker 프로세스로 실행한다.
+Redis는 결과 캐시, 분산 락, 알림 중복 방지에 사용한다. 영속 원본은 PostgreSQL로 단일화한다.
+웹소켓은 시세 스트림과 스캐너 결과 갱신에만 사용하고, 알림 전달 보장은 notifications 테이블과 발송 상태로 관리한다.
+28. 비기능 요구사항과 완료 기준
+API: 일반 조회 p95 500ms 이하, 캐시 적중 시 p95 200ms 이하를 목표로 한다.
+스캐너: 5분봉 기준 대상 코인 전체 평가를 다음 주기 시작 전 완료하고, 지연 시 중복 실행을 막는다.
+알림: 동일 사용자·규칙·종목·신호는 cooldown 내 1회만 생성하며 모든 발송 시도와 실패 사유를 기록한다.
+정확성: 캔들 확정 전후를 구분하고, 백테스트와 탐지에서 미래 봉을 참조하지 않는다.
+보안: 비밀키는 저장소에 커밋하지 않고 환경 변수 또는 Secret Manager로 주입한다.
+관측성: 외부 API 오류율, 스캔 소요시간, 탐지 건수, 알림 성공률, 큐 적체를 메트릭으로 수집한다.
+테스트: 도메인 단위 테스트, 공급사 계약 테스트, 엔진 골든 테스트, 핵심 사용자 흐름 E2E 테스트를 CI에서 실행한다.
+법적: 자동 주문 기능은 MVP에서 제공하지 않으며 모든 신호 화면에 투자 참고용 고지를 노출한다.
+29. 수정 개발 로드맵
+29.1 실행 순서
+Phase 0 (1주): 모노레포 또는 명확한 다중 저장소 구조 확정, Spring Boot/Next.js/PostgreSQL/Redis 로컬 환경, CI, 공통 API 포맷
+Phase 1 (2~3주): 인증, 사용자, 종목 마스터, 관심종목, 업비트·바이낸스 Provider, 코인 시세와 캔들 API
+Phase 2 (2~3주): 모바일 홈·검색·종목 상세·차트, 데이터 출처와 지연 상태 표시
+Phase 3 (3주): 조건검색 v1, 저장식, ABC·삼각수렴 Java 포팅, 골든 테스트, 결과 API
+Phase 4 (2주): 알림 평가기, 중복 방지, 웹 푸시 또는 앱 푸시, 알림함, 운영 로그
+Phase 5 (2주): Pattern Score v1, 규칙 기반 Explain, PRO 제한, 결제, 기본 Admin
+Phase 6: 베타 운영 지표를 기준으로 틱띄기, 뉴스, 주식 시장, 백테스트 중 다음 기능을 선택
+29.2 개발 착수 전 필수 산출물
+코인 우선 사용자 스토리와 화면별 acceptance criteria
+Quote/Candle/Instrument 표준 스키마와 공급사 매핑표
+Python 탐지 엔진 골든 fixture 및 기대 결과
+무료/PRO 기능 제한표와 알림 사용량 정책
+외부 데이터 이용약관, 재배포 가능 범위, 호출 한도와 예상 월 비용
+개인정보·투자 고지 초안과 운영 장애 대응 절차
+30. Signal Lifecycle Engine
+30.1 목적
+패턴이나 조건이 한 번 탐지된 사실만 저장하지 않고, 생성부터 확인·무효화·만료까지 상태 변화를 추적한다. 이를 통해 중복 노출을 줄이고 실제 성과를 객관적으로 측정한다.
+30.2 상태 정의
+미확정 봉에서 생성된 신호는 provisional=true로 저장하며 확정 신호와 시각적으로 구분한다.
+상태 전환은 signal_events에 이력으로 남기고 현재 상태만 덮어쓰지 않는다.
+중복 키는 engine_version, rule_id, instrument_id, timeframe, anchor_candle_time 조합을 기본으로 한다.
+사용자 화면에는 신호 생성 시각, 기준 봉, 현재 상태, 만료 예정 시각을 표시한다.
+31. Signal Performance & Learning Loop
+31.1 실제 성과 추적
+탐지 가격과 1시간, 4시간, 1일, 3일, 7일 후 가격·수익률을 자동 저장한다.
+신호 이후 최대 유리 변동(MFE), 최대 불리 변동(MAE), 목표가·손절가 최초 도달 시각을 계산한다.
+코인 24시간 시장과 주식 거래시간을 구분해 평가 시점을 계산한다.
+성과는 패턴, 시장, timeframe, 엔진 버전, 점수 구간별로 집계한다.
+성과 데이터는 매매 수익 인증이 아니라 탐지 품질 측정용임을 명시한다.
+31.2 평가 지표
+31.3 개선 루프
+탐지 → 상태 추적 → 성과 평가 → 버전별 리포트 → 파라미터 후보 제안 → 검증 후 배포 순으로 운영한다.
+운영 성과가 나쁘다는 이유만으로 자동으로 파라미터를 변경하지 않는다. 변경안은 백테스트와 별도 검증을 통과해야 한다.
+엔진 변경 전후 성과는 동일 시장·기간·종목군으로 비교해 데이터 편향을 줄인다.
+32. Unified Signal Inbox & Alert Simulator
+32.1 통합 신호함
+ABC, 삼각수렴, 조건검색, 이말올, 틱띄기 결과를 하나의 신호 모델과 화면으로 통합한다.
+같은 종목에서 여러 신호가 발생하면 종목 카드에 묶되 신호별 근거와 상태는 유지한다.
+사용자 상태는 NEW, SEEN, WATCHING, DISMISSED로 관리하고 엔진 상태와 분리한다.
+필터는 시장, 패턴, timeframe, 점수, 상태, 발생 시각, 관심종목 여부를 지원한다.
+후보 3개까지 점수, 진행률, 거래량, 유동성, MFE·MAE 통계를 비교하는 기능을 제공한다.
+32.2 알림 사전 시뮬레이션
+알림 저장 전 최근 7일 또는 30일 데이터로 예상 발생 횟수와 대상 종목 수를 보여준다.
+예상 빈도가 높은 규칙은 조건 강화, cooldown 확대, 관심종목 한정 옵션을 제안한다.
+시뮬레이션은 확정 봉 기준의 근사치이며 실제 발생 횟수와 다를 수 있음을 표시한다.
+무료 플랜의 알림 제한은 생성 규칙 수뿐 아니라 월 평가량과 발송량을 함께 고려한다.
+33. Data Quality & Risk Guard
+33.1 데이터 신뢰도
+모든 시세와 신호에 공급사, 수집 시각, 마지막 정상 갱신 시각, 지연 시간, 확정 봉 여부를 연결한다.
+캔들 누락, 시간 역전, 비정상 OHLC, 중복 봉, 장시간 미갱신을 자동 검증한다.
+품질 상태는 HEALTHY, DELAYED, PARTIAL, INVALID로 분류한다.
+INVALID 데이터에서는 신규 신호와 알림 생성을 차단하고, PARTIAL은 화면 경고 후 정책에 따라 제한한다.
+공급사 장애 및 데이터 보정 후 어떤 신호가 영향을 받았는지 추적할 수 있어야 한다.
+33.2 거래 가능성 리스크 필터
+최소 거래대금, 최대 스프레드, 최소 상장 기간, 최소 캔들 수를 시장별 기본 필터로 둔다.
+급격한 갭, 거래정지, 상장폐지 예정, 과도한 단기 변동성, 호가 부족 종목은 경고 또는 제외한다.
+Risk Guard 결과는 PASS, WARN, BLOCK으로 반환하고 차단 이유를 Explain에 포함한다.
+사용자는 경고 기준을 완화할 수 있지만 시스템 기본 차단 사유와 데이터 오류는 우회할 수 없다.
+34. Reproducibility, Versioning & Market Time
+모든 신호에 engine_version, rule_version, parameter_snapshot, data_provider, input_hash를 저장한다.
+같은 입력 데이터와 버전에서는 동일 결과가 나와야 하며, 비결정적 계산과 현재 시각 직접 참조를 금지한다.
+스캔 실행 단위마다 scan_run_id를 발급해 대상 종목, 시작·종료 시각, 성공·실패 수, 코드 버전을 기록한다.
+한국·미국 시장 캘린더, 공휴일, 조기 폐장, 미국 서머타임을 중앙 모듈에서 관리한다.
+원본 캔들이 수정되면 데이터 revision을 올리고 영향을 받은 신호의 재평가 여부를 정책으로 결정한다.
+원시 데이터, 정규화 캔들, 신호, 알림, 성과 데이터별 보관 기간과 삭제·아카이빙 정책을 둔다.
+35. Personalization, Reports & Interface Changes
+35.1 사용자 기능
+초보 모드는 쉬운 설명, 핵심 위험, 다음 확인 포인트를 우선 노출한다.
+전문가 모드는 원시 지표, 파라미터, 기준 봉, 점수 세부값을 우선 노출한다.
+개인화 랭킹은 사용자의 관심시장·timeframe·패턴 선호를 반영하되 기본 Pattern Score를 변경하지 않고 별도 ranking_score로 계산한다.
+주간 리포트는 관심종목 신호, 확인하지 않은 알림, 패턴별 성과, 데이터 품질 이슈를 요약한다.
+Explain에 유용함·유용하지 않음 피드백을 받고, 낮은 평가 사유를 선택적으로 수집한다.
+35.2 데이터 모델 추가
+35.3 API 추가
+35.4 로드맵 반영
+Phase 3에 signal_id, 상태 모델, engine/rule version, input_hash 저장을 포함한다.
+Phase 4에 통합 신호함, 사용자 신호 상태, 알림 시뮬레이션, 중복률 지표를 포함한다.
+Phase 5에 Signal Performance 배치, MFE·MAE 집계, 운영 성과 대시보드를 Pattern Score보다 먼저 구현한다.
+Pattern Score 가중치 조정은 최소 4주간의 실전 성과 데이터와 충분한 표본 수를 확보한 뒤 진행한다.
+개인화 랭킹과 주간 리포트는 기본 신호 품질이 안정된 이후 P1 후반으로 배치한다.
+36. Paper Trading Engine
+36.1 목적과 범위
+실시간 신호를 가상 주문과 포지션으로 연결해 백테스트와 실제 시장 사이의 실행 가능성을 검증한다. Paper Trading은 교육·검증 기능이며 거래소 주문 API와 사용자 자금을 사용하지 않는다.
+지원 주문은 시장가, 지정가, 손절, 목표가로 시작하며 복합 주문은 후순위로 둔다.
+사용자는 초기 가상자산, 포지션 크기 방식, 최대 동시 포지션, 기본 손절·목표 수익률을 설정한다.
+신호 상세에서 가상 진입하거나 규칙별 자동 Paper Trading을 활성화할 수 있다.
+자동 가상 진입은 사용자별 한도, Risk Guard, 데이터 품질 PASS 조건을 모두 충족해야 한다.
+현금, 주문, 체결, 포지션, 실현·미실현 손익을 원장 방식으로 기록하고 과거 값을 덮어쓰지 않는다.
+36.2 주문 상태
+36.3 Paper Trading 성과
+총수익률, 실현손익, 승률, Profit Factor, MDD, 평균 보유기간, 회전율을 제공한다.
+신호 이론 수익률과 가상 체결 순수익률의 차이를 execution gap으로 표시한다.
+성과 화면은 세금 효과를 기본적으로 포함하지 않으며 포함 범위를 명시한다.
+계정 초기화 시 기존 기록은 삭제하지 않고 새 simulation_run으로 분리한다.
+37. Execution Realism Engine
+37.1 현실 체결 모델
+모든 성과 계산에 시장별 매수·매도 수수료를 반영하고 적용된 요율 버전을 저장한다.
+시장가는 당시 최우선 호가와 주문 수량 대비 호가 깊이를 이용해 VWAP 방식으로 가상 체결한다.
+호가 이력이 없으면 거래대금·스프레드·변동성 기반 보수적 슬리피지 모델을 사용하고 estimated=true로 표시한다.
+지정가는 가격 도달만으로 체결하지 않고 거래량 참여율과 대기 순서 가정을 반영한다.
+부분 체결, 미체결, 주문 지연, 급격한 갭을 지원하며 미래 데이터로 체결 여부를 소급 결정하지 않는다.
+동일 체결 모델을 Paper Trading과 Backtest가 공유해 계산 불일치를 방지한다.
+37.2 기본 체결 파라미터
+38. Portfolio Risk Engine
+38.1 위험 측정
+포트폴리오 총 평가액, 현금 비중, 종목·시장·섹터별 노출과 미실현 손익을 계산한다.
+동일 기초자산과 높은 상관관계를 가진 종목을 묶어 집중 위험을 표시한다.
+단일 종목 최대 비중, 시장 최대 비중, 일일 손실 한도, 최대 동시 포지션을 설정한다.
+변동성 기반 포지션 크기와 포트폴리오 열(portfolio heat)을 계산한다.
+초기에는 Historical VaR과 스트레스 시나리오를 참고 지표로만 제공하고 손실 보장 지표로 표현하지 않는다.
+38.2 주문 전 검증
+BLOCK은 자동 Paper Trading 주문을 거절하고 수동 주문에는 차단 이유를 명확히 표시한다.
+실거래가 아니더라도 사용자의 위험 설정 변경과 우회 이력을 감사 로그에 남긴다.
+39. Market Regime Engine
+39.1 국면 분류
+시장 국면은 BULL_TREND, BEAR_TREND, RANGE, HIGH_VOLATILITY, TRANSITION으로 시작한다.
+장기·중기 이동평균 기울기, ADX, 실현 변동성, 시장 폭, 거래량을 규칙 기반으로 결합한다.
+분류는 시장과 timeframe별로 수행하며 regime_version과 입력 스냅샷을 저장한다.
+확정되지 않은 국면은 TRANSITION 또는 confidence가 낮은 상태로 표시하고 강제 분류하지 않는다.
+39.2 신호 연계
+신호 성과를 패턴·시장·timeframe·국면 조합으로 분리 집계한다.
+Pattern Score에는 국면 적합도를 별도 항목으로 표시하되 원본 탐지 결과를 변경하지 않는다.
+표본이 부족한 국면에서는 점수 가중치를 적용하지 않고 참고 정보만 제공한다.
+국면 전환 시 기존 포지션에 위험 재평가 이벤트를 생성한다.
+40. Signal Confidence & Evidence
+40.1 신뢰도 구성
+Pattern Score는 현재 후보의 구조적 적합도이고 Confidence는 과거 근거의 충분성과 안정성이다. 두 값을 하나의 숫자로 합치지 않는다.
+사용자에게 점수, 신뢰도 등급, 평가 표본 수, 평가 기간, 국면을 함께 표시한다.
+초기 등급은 INSUFFICIENT, LOW, MEDIUM, HIGH로 구분한다.
+최소 표본 미달 시 높은 Pattern Score라도 신뢰도 부족 경고를 표시한다.
+여러 조건을 반복 탐색해 우연히 좋은 결과만 선택하는 다중검정 편향을 운영 검토 항목에 포함한다.
+40.2 성과 공개 원칙
+성과에는 수수료·슬리피지 포함 여부, 표본 수, 기간, 생존자 편향 가능성을 표시한다.
+상장폐지·거래정지·심볼 변경 종목을 가능한 범위에서 평가 모집단에 포함한다.
+과거 성과가 미래 수익을 보장하지 않으며 Paper Trading은 실제 체결과 다를 수 있음을 고지한다.
+41. Operational Control & Cost Governance
+41.1 배포와 장애 대응
+엔진, 알림, Paper Trading, AI 기능은 Feature Flag로 독립 활성화하고 긴급 Kill Switch를 둔다.
+엔진 새 버전은 Shadow 실행, 일부 트래픽 Canary, 전체 배포 순으로 진행한다.
+이전 버전과 신호 수·성과·오류율 차이가 임계값을 넘으면 자동 중단 또는 수동 롤백한다.
+주 공급사 장애 시 대체 Provider로 전환하되 가격 차이와 데이터 연속성을 검증한다.
+알림은 CREATED, QUEUED, SENT, DELIVERED, CLICKED, FAILED 상태로 추적한다.
+초기 운영 목표는 데이터·스캐너·알림별 SLO와 RTO/RPO를 구분해 정의한다.
+41.2 과금과 원가
+사용자별 스캔 평가량, 알림 발송량, AI 토큰, 데이터 API 호출량을 usage_events로 기록한다.
+무료·PRO·PRO+는 기능 잠금뿐 아니라 일·월 사용량, 보관 기간, 리포트 범위로 구분한다.
+결제 실패, 유예 기간, 다운그레이드, 환불, 구독 만료 후 데이터 접근 정책을 정의한다.
+데이터 공급사별 재배포 권한과 예상 월 원가를 출시 게이트로 관리한다.
+사용자는 개인정보·전략·Paper Trading 기록을 내보내고 탈퇴 시 정책에 따라 삭제 요청할 수 있다.
+42. v0.7 데이터 모델, API와 로드맵
+42.1 데이터 모델 추가
+42.2 API 추가
+42.3 구현 순서와 출시 게이트
+Phase 5A: 공통 Execution Model, 수수료·슬리피지 버전, Paper 주문·체결 원장
+Phase 5B: 포지션·성과 화면, execution gap, Portfolio Risk 사전 검증
+Phase 5C: Market Regime v1, 표본 기반 Confidence, 신호 상세 연계
+Phase 5D: Feature Flag, Shadow·Canary 배포, usage metering, 운영 대시보드
+출시 게이트: 미래 데이터 참조 없음, 원장 합계 일치, 동일 입력 재현성, 수수료·슬리피지 반영, Risk BLOCK 우회 방지
+Paper Trading 베타는 최소 4주 운영하며 신호 표본, execution gap, 장애율을 검토한 뒤 유료 범위를 결정한다.
+실거래 주문 연동은 v0.7 범위에 포함하지 않는다.
+43. Strategy Validation Governance
+43.1 과적합 방지 원칙
+전략 데이터는 TRAIN, VALIDATION, OUT_OF_SAMPLE 구간으로 분리하고 마지막 구간은 파라미터 선택에 사용하지 않는다.
+시장 시계열 특성을 고려해 임의 셔플 대신 Walk-forward 검증을 기본으로 한다.
+전략별 파라미터 탐색 횟수, 후보 수, 선택 기준, 탈락 결과를 experiment_runs에 기록한다.
+성과가 좋은 조합만 공개하는 선택 편향과 다중검정 문제를 Confidence에 반영한다.
+백테스트, Paper Trading, 운영 성과를 분리 표시하고 하나의 성과 수치로 합치지 않는다.
+운영 중 규칙 변경은 새 rule_version으로 배포하며 과거 결과를 새 버전 성과로 소급 편입하지 않는다.
+43.2 검증 승인 기준
+44. Data Lineage & Correction
+44.1 데이터 계보
+원시 응답, 정규화 레코드, 캔들 revision, 지표 스냅샷, 신호, 설명, 성과 간 lineage_id를 연결한다.
+외부 공급사 응답은 수집 시각, 요청 키, 응답 해시, 스키마 버전, 파서 버전을 기록한다.
+신호 상세에서 데이터 출처와 계산 버전을 감사 가능한 수준으로 추적할 수 있어야 한다.
+민감 정보와 대용량 원본은 별도 보관 정책을 적용하고 무기한 저장하지 않는다.
+44.2 정정과 재처리
+공급사 정정 또는 결측 복구 시 새 data_revision을 생성하고 기존 원본을 조용히 덮어쓰지 않는다.
+영향 분석 작업은 수정된 캔들에서 파생된 지표, 신호, 알림, Paper 체결, 성과 목록을 산출한다.
+재계산 결과가 달라지면 before·after와 변경 사유를 correction_events에 기록한다.
+이미 발송된 알림은 삭제하지 않고 정정 배지와 필요 시 후속 안내를 제공한다.
+재처리는 idempotent해야 하며 동일 revision을 반복 적용해도 중복 결과가 생기지 않아야 한다.
+45. Ledger Integrity & Reconciliation
+45.1 원장 불변식
+가상 현금 변화는 입출금, 수수료, 체결, 실현손익 원장 항목의 합으로만 계산한다.
+주문 체결 수량 합은 주문 수량을 초과할 수 없고 포지션 수량은 체결 원장으로 재구성 가능해야 한다.
+모든 쓰기 요청은 idempotency_key를 지원해 재시도 시 중복 주문과 중복 체결을 막는다.
+주문·체결·포지션 변경은 하나의 트랜잭션 또는 복구 가능한 이벤트 흐름으로 처리한다.
+금액과 수량은 부동소수점 대신 시장별 정밀도를 가진 Decimal로 저장한다.
+45.2 대사와 복구
+대사 실패는 조용히 보정하지 않고 incident와 audit log를 생성한다.
+장애 복구 테스트는 중간 실패, 중복 메시지, 순서 역전, DB 재시작 시나리오를 포함한다.
+46. Security, Privacy & Abuse Prevention
+46.1 위협 모델과 인증
+계정 탈취, 토큰 탈취, 권한 상승, 관리자 오용, 데이터 유출, 리소스 고갈을 핵심 위협으로 정의한다.
+관리자와 중요 기능 사용자는 TOTP 또는 WebAuthn 기반 2FA를 적용한다.
+비밀번호·2FA·이메일·구독·위험 한도 변경에는 최근 인증 또는 재인증을 요구한다.
+사용자는 활성 세션과 기기를 조회하고 개별 또는 전체 로그아웃할 수 있다.
+Refresh Token은 회전·재사용 탐지·폐기 정책을 적용하고 원문을 저장하지 않는다.
+PII와 비밀값은 저장·전송 시 암호화하며 관리자 조회도 목적과 사유를 감사 로그에 남긴다.
+46.2 권한과 관리자 통제
+RBAC에 리소스 범위와 환경을 결합하고 운영·스테이징 권한을 분리한다.
+Feature Flag 전체 중단, 데이터 재처리, 사용자 가장, 대량 내보내기는 이중 승인 대상으로 둔다.
+관리자 화면에서 비밀번호, 토큰, 전체 개인정보를 직접 노출하지 않는다.
+권한 변경, 로그인 실패 급증, 비정상 대량 조회는 보안 이벤트로 탐지한다.
+46.3 남용 방지
+로그인, 회원가입, 종목 검색, 스캔, 알림, 백테스트, AI 요청별 Rate Limit과 비용 한도를 둔다.
+IP, 계정, 기기, 결제 수단 신호를 조합해 무료 계정 반복 생성과 자동화 남용을 탐지한다.
+비싼 작업은 동시 실행 수, 큐 우선순위, 일일 quota로 통제한다.
+차단은 ALLOW, CHALLENGE, THROTTLE, BLOCK 단계로 적용하고 오탐 이의 처리 절차를 둔다.
+47. Experimentation & Model Change Control
+A/B 실험은 가설, 대상, 기간, 1차 지표, 보호 지표, 중단 기준을 시작 전에 등록한다.
+사용자 배정은 안정적인 experiment_key로 유지하며 동일 사용자가 집단을 반복 이동하지 않게 한다.
+Pattern Score 실험은 클릭률뿐 아니라 신호 성과, 알림 해제율, 위험 경고 무시율을 함께 본다.
+여러 실험의 동시 노출 충돌을 관리하고 결제·보안·법적 고지에는 무작위 실험을 제한한다.
+보호 지표가 임계값을 넘으면 실험을 자동 중단하고 원인을 기록한다.
+실험 종료 후 결과와 의사결정을 남기고 유리한 결과만 선택적으로 보고하지 않는다.
+48. Notification Quality & User Control
+48.1 전달 품질
+신호 발생, 알림 생성, 큐 진입, 공급사 발송, 단말 수신, 클릭 시각을 분리 측정한다.
+중요도는 CRITICAL, HIGH, NORMAL, DIGEST로 구분하되 투자 신호를 안전 경보처럼 과장하지 않는다.
+동일 종목·유사 신호는 설정된 시간창에서 묶고 중복·지연·순서 역전을 탐지한다.
+오래 지연되어 의미가 없어진 알림은 발송하지 않고 EXPIRED 처리한다.
+알림 클릭은 정확한 signal_id와 당시 상태 화면으로 이동하며 삭제된 신호도 감사 화면을 제공한다.
+48.2 사용자 제어
+사용자 지역 시간 기준 Quiet Hours와 시장별 예외를 지원한다.
+즉시, 시간별 요약, 일일 요약 중 전달 방식을 선택할 수 있다.
+장기간 열지 않는 유형은 빈도 축소를 제안하되 사용자 동의 없이 중요 알림을 끄지 않는다.
+알림 설정 변경 전 예상 발생 빈도와 최근 전달 성공률을 표시한다.
+49. Reliability, Backup & Incident Response
+49.1 SLO와 장애 등급
+SEV1은 광범위 데이터 오류, 원장 불일치, 보안 침해 가능성으로 정의하고 즉시 기능 중단을 허용한다.
+SEV2는 핵심 기능 장애, SEV3는 제한적 품질 저하로 분류한다.
+49.2 백업과 복구
+PostgreSQL은 자동 백업과 Point-in-Time Recovery를 구성하고 백업 암호화·보존 기간을 정의한다.
+Redis는 원본 저장소로 사용하지 않으며 유실 시 PostgreSQL과 이벤트로 재구성 가능해야 한다.
+복구 훈련은 분기 1회 이상 수행하고 실제 RTO·RPO와 실패 항목을 기록한다.
+공급사 장애, 캔들 오염, 알림 폭주, 중복 체결, DB 장애, 키 유출 Runbook을 작성한다.
+장애 종료 후 타임라인, 영향, 근본 원인, 재발 방지 조치를 Postmortem으로 남긴다.
+50. Mobile Product Readiness
+온보딩은 관심시장 선택, 관심종목 등록, 첫 알림 생성, 알림 권한 요청 순서로 구성한다.
+알림 권한은 앱 첫 실행 즉시 요구하지 않고 사용자가 가치와 예시를 확인한 뒤 요청한다.
+로딩, 빈 데이터, 지연 데이터, 부분 실패, 오프라인, 권한 거부 상태를 화면별로 설계한다.
+저속 네트워크에서는 마지막 정상 데이터와 갱신 시각을 표시하고 요청 취소·재시도를 지원한다.
+WCAG 2.2 AA 수준의 색상 대비, 글자 확대, 키보드 탐색, 스크린리더 레이블을 목표로 한다.
+저사양 Android와 모바일 Safari를 포함한 지원 기기 기준과 성능 예산을 정의한다.
+딥링크는 인증 전후 목적지를 보존하고 권한이 없는 화면은 안전한 대체 화면으로 이동한다.
+51. v0.8 Data Model, API & Release Gates
+51.1 데이터 모델 추가
+51.2 API 추가
+51.3 출시 게이트
+출시 게이트 미통과 기능은 정식 요금제에 포함하지 않고 Feature Flag로 비활성화한다.
+v0.8 구현 순서는 원장 정합성·데이터 계보·보안 기반을 먼저 구축하고 실험·모바일 고도화를 후속으로 둔다.
+자동매매, 거래소 API 키 보관, AI 가격 예측은 v0.8 범위에서 제외한다.
+52. Canonical Event & Data Contract
+시세, 캔들, 신호, 주문, 체결, 알림은 공통 event_id, event_type, schema_version, occurred_at, produced_at, trace_id를 가진다.
+이벤트 스키마는 하위 호환을 원칙으로 하고 필드 삭제·의미 변경은 새 major schema_version으로 배포한다.
+Producer와 Consumer 간 Contract Test를 CI에서 실행하고 미등록 스키마 이벤트를 운영 큐에 발행하지 않는다.
+중복 전달을 허용하되 Consumer는 event_id와 처리 키를 이용해 멱등 처리한다.
+53. Queue, Backpressure & Workload Isolation
+큐 깊이, oldest message age, 처리율, 실패율을 메트릭으로 수집하고 단계별 부하 차단 기준을 둔다.
+Dead Letter Queue는 원인·재시도 횟수·원본 참조를 보존하고 무한 재시도를 금지한다.
+무거운 백테스트가 시세 수집과 알림 전송 자원을 잠식하지 않도록 worker pool과 DB 연결 한도를 분리한다.
+54. Capacity Planning & Performance Budget
+등록 종목 수, timeframe 수, 초당 시세 이벤트, 동시 사용자, 알림 fan-out을 기준으로 월별 용량 모델을 작성한다.
+API, WebSocket, Scanner, DB, Redis, Queue별 부하 테스트 시나리오와 한계점을 기록한다.
+모바일 초기 화면은 핵심 콘텐츠 LCP 2.5초, 상호작용 INP 200ms를 목표로 성능 예산을 관리한다.
+성능 개선은 캐시 적중률만 보지 않고 데이터 최신성과 오류 은폐 여부를 함께 검증한다.
+55. Storage Lifecycle & Query Architecture
+최근 캔들·신호는 hot storage, 오래된 원본·성과는 partitioned warm storage, 감사·백업은 archive 계층으로 분리한다.
+대용량 시계열 테이블은 market·time 기준 파티셔닝과 보존 정책을 적용한다.
+운영 트랜잭션 조회와 분석 집계를 분리하고 무거운 리포트가 주문·알림 DB를 방해하지 않게 한다.
+삭제 요청과 법적 보존이 충돌할 경우 데이터 분류표와 승인 절차를 따른다.
+56. Provider Portability & Data Economics
+공급사별 기능, 정확도, 지연, 호출 제한, 재배포 권리, 월 비용을 provider scorecard로 관리한다.
+동일 내부 모델로 두 공급사를 Shadow 비교해 가격 편차와 결측률을 측정한 뒤 전환한다.
+공급사 종속 식별자와 오류 코드를 도메인 모델에 노출하지 않는다.
+대체 공급사가 없는 기능은 화면과 로드맵에 single-provider risk로 표시한다.
+57. FinOps & Unit Economics
+예산 임계값은 알림만 보내지 않고 비핵심 배치 축소, AI 제한, 리포트 지연 같은 단계별 대응과 연결한다.
+비용 절감을 위해 데이터 품질이나 법적 라이선스 범위를 희생하지 않는다.
+58. v0.9 Data Model, Metrics & Gates
+출시 게이트: 계약 테스트 통과, DLQ 재처리 검증, 핵심 작업 자원 격리, 목표 부하 2배 테스트, 사용자·기능별 원가 측정 가능.
+59. v1.0 Scope Freeze
+v1.0 출시 범위는 회원·인증, 관심종목, 코인 시세·차트, 조건검색 v1, ABC·삼각수렴, 통합 신호함, 알림, Paper Trading 기본 기능으로 동결한다.
+Pattern Score·Explain은 규칙 기반 기본형만 포함하며 AI 요약, 커뮤니티, 전략마켓, Replay, 실거래는 출시 후 범위다.
+범위 변경은 기능 추가가 아니라 기존 출시 항목 제거·교체를 포함해 Change Request와 일정·위험 영향 승인을 요구한다.
+P0 미완료를 P1 기능으로 가리는 것을 금지하고 출시 직전 신규 기능 병합을 제한한다.
+60. Requirements Traceability
+모든 요구사항은 화면, API, 데이터 모델, 테스트 케이스, 운영 메트릭에 연결되는 고유 ID를 가진다.
+구현 완료는 코드 병합이 아니라 acceptance criteria와 관측성·문서화까지 충족한 상태다.
+61. API & Schema Compatibility Contract
+Public API는 /api/v1을 사용하고 breaking change는 병행 운영 기간과 마이그레이션 가이드 없이 배포하지 않는다.
+오류 응답은 code, message, trace_id, field_errors를 포함하며 내부 예외와 공급사 원문을 노출하지 않는다.
+목록 API는 cursor pagination, 안정적 정렬 키, 최대 page size를 표준화한다.
+시간, 가격, 수량, 통화, percentage의 단위와 Decimal 직렬화 규칙을 API 계약에 고정한다.
+OpenAPI diff와 DB migration 검사를 CI 출시 차단 조건으로 사용한다.
+62. Test Pyramid & Release Evidence
+Flaky test는 재실행으로 숨기지 않고 소유자와 수정 기한을 부여한다.
+운영 데이터 복사본은 개인정보 제거와 접근 승인을 거친 테스트 fixture로만 사용한다.
+63. Migration & Rollback Contract
+DB 변경은 Expand-Migrate-Contract 순서로 배포하고 구버전 애플리케이션과의 짧은 공존을 허용한다.
+대용량 backfill은 배치 크기, 중단·재개, 진행률, 검증 쿼리, 롤백 계획을 가진다.
+애플리케이션 롤백과 데이터 롤백을 구분하고 파괴적 migration은 백업·복원 검증 전 실행하지 않는다.
+Feature Flag가 DB 스키마 불일치를 해결해 주는 것으로 간주하지 않는다.
+64. Launch Operations Contract
+출시 2주 전 코드 동결 기간, 담당자, 모니터링 대시보드, 고객 공지, 지원 대응 문구를 확정한다.
+출시 당일에는 트래픽, 가입, 데이터 지연, 스캔 지연, 알림 실패, 원장 대사, 비용을 실시간 확인한다.
+Go/No-Go 결정자는 제품, 개발, 운영, 보안 관점의 체크 결과를 기록한다.
+출시 후 24시간·72시간·7일 리뷰에서 문제와 롤백 여부를 재평가한다.
+65. v1.0 Definition of Done
+66. Customer Support Operating Model
+문의 유형을 계정·결제·데이터·신호·알림·Paper Trading·보안·개인정보로 분류하고 담당 큐와 응답 목표를 둔다.
+고객지원 도구는 최소 권한으로 구성하며 사용자 가장 기능은 명시적 승인과 감사 로그를 요구한다.
+지원 답변은 투자 판단을 대신하거나 수익을 약속하지 않고 데이터·기능 동작을 설명한다.
+반복 문의는 제품 결함·문서 부족·오해 유발 UX로 분류해 개선 backlog에 연결한다.
+67. Signal Dispute & Correction Workflow
+사용자는 신호 상세에서 데이터 오류, 설명 오류, 중복, 무효화 지연, 성과 계산 오류를 신고할 수 있다.
+신고에는 signal_id와 관련 lineage가 자동 첨부되며 사용자가 원시 로그를 직접 수집할 필요가 없게 한다.
+검토 결과는 CONFIRMED_ERROR, EXPECTED_BEHAVIOR, DATA_PROVIDER_ISSUE, NEEDS_MORE_DATA로 분류한다.
+오류가 확인되면 영향 범위, 수정 시각, 재계산 여부와 고객 영향 조치를 기록한다.
+수정된 신호는 원본 이력을 삭제하지 않고 정정 표시와 변경 내용을 제공한다.
+68. Explain Quality Standard
+Explain 템플릿 변경은 대표 신호 fixture와 금지 표현 검사를 통과해야 한다.
+AI가 설명 문장을 생성하더라도 계산 사실과 위험 문구는 구조화 데이터에서 강제한다.
+69. Responsible UX & Behavioral Safety
+과도한 거래를 유도하는 연속 알림, 손익 축하 애니메이션, 긴급성을 과장하는 카운트다운을 사용하지 않는다.
+손실 후 거래 확대, 과도한 포지션 집중, 반복적인 위험 경고 무시가 감지되면 휴식·한도 점검을 제안한다.
+랭킹은 단기 수익률만으로 정렬하지 않고 위험, 표본, MDD, 데이터 품질을 함께 노출한다.
+다크 패턴을 금지하고 구독 해지와 알림 해제를 가입·활성화보다 부당하게 어렵게 만들지 않는다.
+70. Transparency & Status Communication
+상태 페이지에 API, 시장 데이터, Scanner, 알림, Paper Trading의 현재 상태와 과거 장애를 제공한다.
+중대한 데이터 오류는 단순 장애가 아니라 영향을 받은 시장·기간·신호 유형을 설명한다.
+분기별 투명성 보고서에 신호 수, 정정률, 데이터 품질, 알림 실패, 보안·개인정보 요청 통계를 집계한다.
+성과 통계는 유리한 기간만 선택하지 않고 표본·기간·비용 조건을 함께 공개한다.
+71. User Data Rights & Account Lifecycle
+사용자는 프로필, 관심종목, 전략, 알림, Paper 기록, 피드백 데이터를 기계 판독 가능한 형식으로 내보낼 수 있다.
+탈퇴는 즉시 로그인 차단 후 법적 보존 대상과 삭제 대상을 분리하고 완료 상태를 안내한다.
+휴면·탈퇴·구독 만료·재가입 상태별 데이터 보존과 복구 가능 범위를 정의한다.
+마케팅 동의와 필수 서비스 알림 동의를 분리하고 변경 이력을 보존한다.
+72. v1.1 Data Model, API & Service Metrics
+API 추가: /api/support/cases, /api/signals/{id}/disputes, /api/me/data-export, /api/me/account-deletion, /api/status.
+73. Public Integration Boundary
+외부 공개 범위는 읽기 전용 시세·신호·사용자 승인 Webhook부터 시작하고 주문·관리자 API는 공개하지 않는다.
+OAuth 2.1 Authorization Code + PKCE를 사용하고 scope를 watchlist:read, signals:read, alerts:write처럼 최소화한다.
+개인 API Token은 만료, 이름, 마지막 사용, IP 제한, 즉시 폐기를 지원하며 원문을 다시 표시하지 않는다.
+파트너별 quota, 데이터 재배포 범위, 캐싱 가능 기간을 계약과 기술 정책으로 동시에 강제한다.
+74. Webhook Delivery Contract
+Webhook은 event_id, type, schema_version, occurred_at, data를 포함하고 HMAC 서명을 제공한다.
+재시도는 지수 백오프와 최대 기간을 가지며 수신자는 event_id로 멱등 처리한다.
+Endpoint 검증, 비밀키 회전, 일시 중지, 최근 전달 로그와 수동 재전송을 제공한다.
+민감 정보와 사용자가 승인하지 않은 관심종목·성과 데이터는 payload에 포함하지 않는다.
+75. Strategy SDK & Sandbox
+전략 확장은 제한된 지표 입력과 구조화된 SignalCandidate 출력 계약을 사용하는 SDK로 정의한다.
+사용자 코드는 네트워크, 파일시스템, 비밀값, 운영 DB에 직접 접근할 수 없는 격리 환경에서 실행한다.
+CPU, 메모리, 실행시간, 결과 수, 로그 크기 제한과 강제 종료를 적용한다.
+전략은 deterministic mode, 고정 데이터 fixture, 비용·미래 데이터 참조 검사를 통과해야 한다.
+초기에는 내부·승인 파트너 전략만 허용하고 임의 사용자 코드 업로드는 후순위로 둔다.
+76. Marketplace Review & Ranking
+Marketplace 순위는 판매량이나 단기 수익률만 사용하지 않고 위험, 표본, 안정성, 신고율, 최신성을 포함한다.
+제작자는 불리한 성과 구간을 삭제할 수 없고 새 버전은 기존 리뷰·성과와 분리한다.
+77. Creator Economics & Disputes
+유료 전략은 가격, 플랫폼 수수료, 세금 처리, 정산 주기, 환불 조건을 명시한다.
+정산은 구매·환불·차지백 원장을 기반으로 하며 제작자 잔액과 회계 합계를 대사한다.
+표절, 허위 성과, 저작권, 상표, 악성 코드 신고와 임시 비공개 절차를 둔다.
+투자 손실 자체는 환불 사유로 약속하지 않으며 기능 미제공·허위 표시와 구분한다.
+78. Partner & Developer Operations
+Developer Portal에 API 문서, SDK, 변경 이력, 상태, 샌드박스, 사용량과 오류 로그를 제공한다.
+API 변경은 deprecation 공지, 사용량 기반 영향 대상 통지, sunset 기간을 거친다.
+파트너 앱은 이름, 도메인, 개인정보처리방침, 요청 scope, Webhook endpoint 검증을 거쳐 승인한다.
+파트너 장애나 오용이 베인 핵심 서비스에 전파되지 않도록 별도 quota와 circuit breaker를 적용한다.
+79. v1.2 Data Model, API & Ecosystem Gates
+API 추가: /oauth/authorize, /oauth/token, /api/v1/webhooks, /api/v1/developer/usage, /api/v1/strategies/packages, /api/v1/marketplace.
+생태계 출시 게이트: scope 검증, Webhook 서명·재시도, 샌드박스 탈출 테스트, 전략 재현성, 정산 대사, 데이터 라이선스 확인.
+실거래 주문 권한, 무제한 사용자 코드, 원시 데이터 재판매는 v1.2 범위에서 제외한다.
+80. 결론
+v1.2의 핵심은 베인의 신뢰·보안 경계를 유지하면서 외부 앱과 전략 제작자가 안전하게 기능을 확장할 수 있게 만드는 것이다. 공개 API, Webhook, Strategy SDK와 Marketplace는 최소 권한, 격리 실행, 검증 가능한 성과와 정산 원장을 전제로 제공한다. 생태계 확장은 핵심 제품의 데이터 권리, 성능, 사용자 안전을 침해하지 않는 범위에서 단계적으로 승인한다.
+--- TABLE 0 ---
+버전 | 일자 | 변경 내용 | 비고
+v0.1 | 2026-06-08 | 모바일 투자 터미널, Spring Boot, 조건검색 구독, 관리자 정의 | 초안
+v0.2 | 2026-06-08 | UX/IA, MVP 범위, ERD, API, 조건검색 DSL, 알림/데이터/운영/보안 보강 | 실행형 기획서
+v0.3 | 2026-06-09 | 베인 프로젝트명 정리, 패턴 탐지 엔진, 속보/TVL/틱띄기 스캐너 방향 추가 | 제품 방향 재정의
+v0.4 | 2026-06-09 | Pattern Score, Explain Engine, Backtest Engine, Strategy Marketplace, AI Trading Assistant, Replay Engine 추가 | 본 문서
+v0.5 | 2026-06-09 | 현행 Python 데스크톱 자산 분석, 코인 우선 MVP 확정, 엔진 이관 전략, 품질 기준, 실행 로드맵 보강 | 개발 기준선
+v0.6 | 2026-06-09 | 신호 생명주기, 실전 성과 추적, 통합 신호함, 알림 시뮬레이션, 데이터 품질·리스크 필터, 개인화와 재현성 설계 추가 | 운영 학습 루프
+v0.7 | 2026-06-09 | Paper Trading, 현실 체결 모델, Portfolio Risk, Market Regime, 표본 기반 신뢰도, 운영·과금 통제 추가 | Trust & Execution Validation
+v0.8 | 2026-06-09 | 과적합 방지, 데이터 계보, 원장 대사, 보안·남용 방지, 실험 통제, 알림 품질, 재해 복구와 출시 게이트 추가 | Production Readiness & Governance
+v0.9 | 2026-06-09 | 이벤트 표준, 큐·백프레셔, 용량 계획, 저장 수명주기, 공급사 이식성, FinOps 추가 | Scale, Data Platform & FinOps
+v1.0 | 2026-06-09 | MVP 범위 동결, 요구사항 추적, API 호환성, 테스트 전략, 데이터 이관, Go/No-Go 계약 추가 | MVP Scope Freeze & Delivery Contract
+v1.1 | 2026-06-09 | 고객지원, 신호 정정·이의제기, Explain 품질, 책임 있는 UX, 투명성 보고서, 사용자 데이터 권리 추가 | Customer Trust & Service Operations
+v1.2 | 2026-06-09 | 외부 API·Webhook, 전략 SDK, 샌드박스, Marketplace 검증·정산, 파트너·개발자 거버넌스 추가 | Extensibility & Ecosystem Governance
+--- TABLE 1 ---
+구분 | 기존 서비스 | 베인의 방향 | 차별화
+Bloomberg | 기관/전문가 중심 | 개인투자자용 모바일 터미널 | 복잡도 축소, 접근성 강화
+TradingView | 차트/스크립트 중심 | 차트 + 조건검색 + 패턴 탐지 | 실행 가능한 후보 추천
+Finviz | 스크리너 중심 | 모바일 조건검색 + 자연어 검색 | 한국/미국/코인 통합
+Stocktwits | 커뮤니티 중심 | 종목 커뮤니티 + 데이터 기반 설명 | 노이즈 제어와 신호 중심
+--- TABLE 2 ---
+우선순위 | 기능 | MVP 포함 | 이유 | 비고
+P0 | 회원/로그인/관심종목 | 포함 | 기본 사용 흐름 | 소셜 로그인은 2차 가능
+P0 | 시세/종목 상세/차트 | 포함 | 서비스 진입점 | 초기 지연시세 허용
+P0 | 조건검색기 v1 | 포함 | 수익모델 핵심 | 기술지표 5~8개부터
+P0 | 조건 알림 | 포함 | 재방문/구독 전환 핵심 | 푸시/웹 알림
+P1 | Pattern Score/Explain | 일부 포함 | 후보 신뢰도 강화 | 초기에는 규칙 기반
+P1 | 구독/결제 | 포함 | PRO 판매 | 웹 결제 우선
+P1 | 기본 어드민 | 포함 | 운영 필수 | 회원/구독/알림/로그
+P2 | 뉴스/AI 요약 | 2차 | 데이터/비용 관리 필요 | 초기 요약 제한
+P2 | 패턴 엔진 고도화 | 2차 | 서비스 차별화 | ABC/삼각수렴/이말올
+P3 | 백테스트/전략마켓/Replay | 3차 | 장기 락인 효과 | 데이터 축적 후
+--- TABLE 3 ---
+탭 | 목적 | 주요 화면 | MVP
+홈 | 시장 상황 빠른 확인 | 관심종목, 지수, 급등락, 추천 후보 | 포함
+검색 | 종목/조건/패턴 검색 | 종목 검색, 조건검색, 저장식 | 포함
+스캐너 | 실시간 후보 확인 | 틱띄기, 패턴 후보, 점수 랭킹 | 일부 포함
+알림 | 신호 확인 | 가격/조건/뉴스/패턴 알림 | 포함
+내정보 | 설정/구독 | 프로필, 결제, 알림 설정 | 포함
+--- TABLE 4 ---
+소스 | 수집 데이터 | 초기 우선순위 | 비고
+업비트 | 가격, 거래량, 캔들, 체결, 호가 | P0 | 코인 실시간 후보
+바이낸스 | 가격, 거래량, 캔들, 체결, 호가 | P0 | 글로벌 코인 기준
+CoinGecko | 시총, 유통량, 메타 정보 | P1 | 보조 데이터
+DefiLlama | TVL, 프로토콜/체인 데이터 | P2 | 온체인 탭
+yfinance | 미국주식/ETF 가격 데이터 | P1 | 초기 지연 데이터 가능
+Telegram | 속보, 채널 공지 | P2 | 중복/노이즈 필터 필요
+Bloomberg RSS | 뉴스 헤드라인 | P2 | 사용 가능 범위 확인 필요
+--- TABLE 5 ---
+카테고리 | 지표 | 예시 조건 | MVP
+가격 | 현재가/등락률 | 등락률 > 5%, 현재가 > 전일고가 | 포함
+거래량 | 거래량/평균거래량 | 거래량 > 20일 평균 * 3 | 포함
+이동평균 | MA5/20/60/120 | 종가 > MA20, MA5 골든크로스 MA20 | 포함
+모멘텀 | RSI | RSI < 30, RSI > 70 | 포함
+추세 | MACD | MACD 골든크로스 | 포함
+변동성 | 볼린저밴드 | 종가 > 상단밴드, 하단밴드 터치 | 포함
+기타 | 52주 신고가/신저가 | 현재가 >= 52주 최고가 | 2차
+수급 | 기관/외국인 | 외국인 순매수 증가 | 데이터 확보 후
+--- TABLE 6 ---
+지표 | 설명 | 점수 반영
+TPS | 초당 체결 수 | 높을수록 가산
+Spread | 매수/매도 호가 차이 | 낮을수록 가산
+Orderbook Imbalance | 매수/매도 잔량 불균형 | 방향성 판단
+Micro Volatility | 초단기 변동성 | 적정 구간 가산
+Trade Strength | 체결 강도 | 매수 우위 가산
+--- TABLE 7 ---
+항목 | 기본 배점 | 설명
+패턴 완성도 | 30 | ABC 진행률, 삼각수렴 수렴률, 이말올 조건 충족률
+거래량 증가 | 20 | 최근 거래량 대비 평균 거래량 증가율
+추세 강도 | 20 | MA 배열, MACD, 가격 위치
+변동성 적정성 | 10 | 너무 낮거나 과도한 변동성 제외
+뉴스/속보 모멘텀 | 20 | 긍정 뉴스, 공시, 텔레그램 속보 반영
+--- TABLE 8 ---
+지표 | 설명
+승률 | 전체 거래 중 수익 거래 비율
+평균 수익률 | 거래당 평균 수익률
+누적 수익률 | 전체 기간 누적 성과
+MDD | 최대 낙폭
+Profit Factor | 총이익 / 총손실
+거래 횟수 | 검증 샘플 수
+--- TABLE 9 ---
+영역 | 기술
+Frontend | Next.js, TypeScript, Tailwind CSS, ShadCN UI, PWA
+Backend | Spring Boot 3, Java 21, Spring Security, Spring Data JPA, WebSocket/STOMP
+Database | PostgreSQL
+Cache/Queue | Redis
+Infra | Docker, Nginx, AWS 또는 Oracle Cloud
+Monitoring | Spring Actuator, Sentry, Prometheus/Grafana 검토
+--- TABLE 10 ---
+테이블 | 주요 컬럼 | 설명 | 우선순위
+users | id, email, nickname, role, status, created_at | 회원 | P0
+subscriptions | id, user_id, plan, status, started_at, expired_at | 구독 상태 | P0
+payments | id, user_id, amount, provider, status, paid_at | 결제 이력 | P0
+stocks | id, symbol, name, market, exchange, currency, sector | 종목 마스터 | P0
+quotes | stock_id, price, change_rate, volume, updated_at | 최근 시세 캐시 | P0
+candles | stock_id, timeframe, open, high, low, close, volume, time | 캔들 데이터 | P0
+watchlists | id, user_id, name | 관심그룹 | P0
+scanner_rules | id, user_id, name, rule_json, is_paid, enabled | 조건검색식 | P0
+pattern_results | id, stock_id, pattern_type, score, snapshot_json, detected_at | 패턴 탐지 결과 | P1
+score_snapshots | id, stock_id, score_type, score, detail_json, created_at | 점수 이력 | P1
+backtests | id, user_id, strategy_id, period, result_json, created_at | 백테스트 결과 | P2
+strategies | id, user_id, name, rule_json, visibility, stats_json | 공유 전략 | P2
+alerts | id, user_id, type, target_id, rule_json, enabled, cooldown | 알림 규칙 | P0
+notifications | id, user_id, title, body, read_at, sent_at | 알림함 | P0
+news | id, source, title, url, summary, sentiment, published_at | 뉴스 | P2
+audit_logs | id, actor_id, action, target, ip, created_at | 운영/보안 로그 | P0
+--- TABLE 11 ---
+도메인 | Method | Endpoint | 설명 | 권한
+Auth | POST | /api/auth/login | 로그인 | Public
+User | GET | /api/me | 내 정보 | User
+Market | GET | /api/markets | 시장 목록 | Public
+Stock | GET | /api/stocks/search?q= | 종목 검색 | Public
+Quote | GET | /api/quotes?symbols= | 시세 조회 | Public
+Chart | GET | /api/stocks/{symbol}/candles | 캔들 조회 | Public
+Scanner | POST | /api/scanner/run | 조건검색 실행 | User/PRO
+Pattern | GET | /api/patterns/results | 패턴 탐지 결과 | User/PRO
+Scoring | GET | /api/scores/{symbol} | 종목 점수 상세 | User/PRO
+Explain | GET | /api/explain/{symbol} | 탐지 이유 설명 | User/PRO
+Backtest | POST | /api/backtests/run | 백테스트 실행 | PRO+
+Strategy | GET | /api/strategies | 전략 목록 | User
+Strategy | POST | /api/strategies | 전략 저장/공유 | PRO
+Alert | POST | /api/alerts | 알림 생성 | User/PRO
+Admin | GET | /api/admin/dashboard | 관리자 대시보드 | Admin
+--- TABLE 12 ---
+메뉴 | 기능 | MVP
+대시보드 | 가입자, DAU, 구독자, 알림 발송, API 오류 | 포함
+회원 | 검색, 상태 변경, 구독 확인, 로그인 로그 | 포함
+구독/결제 | 결제 이력, 환불 상태, 쿠폰 | 포함
+조건검색 | 검색식 템플릿, 사용량, 오류 로그 | 포함
+패턴 엔진 | 패턴별 탐지 건수, 점수 분포, 오탐 신고 | P1
+알림 | 발송 로그, 실패 로그, 공지 발송 | 포함
+뉴스 | 뉴스 소스, AI 요약 상태, 숨김 처리 | P2
+커뮤니티 | 게시글/댓글/신고/금칙어 | P2
+시스템 | API 상태, 서버 상태, 배치 상태 | 포함
+--- TABLE 13 ---
+단계 | 기간 | 개발 내용 | 완료 기준
+Phase 0 | 1주 | 프로젝트 세팅, DB, 인증, 배포 파이프라인 | 로그인/배포 가능
+Phase 1 | 2~4주 | 홈, 관심종목, 종목 검색, 시세, 차트 | 사용자가 종목 확인 가능
+Phase 2 | 4~7주 | 조건검색 v1, 검색 결과, 저장식 | 기본 검색식 실행 가능
+Phase 3 | 7~9주 | 알림, 구독, 결제, Admin | PRO 기능 판매 가능
+Phase 4 | 9~12주 | Pattern Score, Explain Engine, 패턴 결과 화면 | 후보 추천과 이유 표시 가능
+Phase 5 | 이후 | 뉴스/AI 요약, 백테스트, 전략마켓 | 베타 테스트 및 PRO+ 확장
+--- TABLE 14 ---
+상태 | 의미 | 전환 조건
+DETECTED | 조건을 처음 충족한 후보 | 엔진 최초 탐지
+CONFIRMED | 확정 봉 또는 추가 조건으로 확인된 신호 | 확정 봉 마감, 거래량·돌파 조건 충족
+INVALIDATED | 전제 조건이 깨진 신호 | 패턴 기준선 이탈, 데이터 정정, 규칙 위반
+EXPIRED | 유효 시간이 지난 신호 | timeframe별 TTL 경과
+CLOSED | 성과 측정이 완료된 신호 | 최종 평가 구간 종료
+--- TABLE 15 ---
+지표 | 정의 | 사용 목적
+Hit Rate | 정해진 기간 내 목표 수익률 도달 비율 | 패턴 유효성 비교
+MFE | 신호 이후 최대 유리 변동률 | 목표 수익률 설계
+MAE | 신호 이후 최대 불리 변동률 | 손절·리스크 기준 설계
+Median Return | 평가 시점별 수익률 중앙값 | 이상치 영향을 줄인 비교
+Invalidation Rate | 전체 신호 중 무효화 비율 | 오탐 및 규칙 품질 측정
+Duplicate Alert Rate | 중복 억제 전후 반복 알림 비율 | 알림 피로도 관리
+--- TABLE 16 ---
+테이블 | 주요 컬럼 | 설명
+signals | id, instrument_id, type, timeframe, status, detected_price, detected_at, expires_at, engine_version, input_hash | 통합 신호 원본
+signal_events | id, signal_id, from_status, to_status, reason, occurred_at | 신호 상태 전환 이력
+signal_performance | signal_id, horizon, return_rate, mfe, mae, target_hit_at, stop_hit_at | 평가 구간별 실제 성과
+scan_runs | id, engine, version, market, started_at, finished_at, status, stats_json | 스캔 실행과 재현 정보
+data_quality_events | id, provider, instrument_id, severity, type, detail_json, detected_at | 데이터 품질 이상
+user_signal_states | user_id, signal_id, state, updated_at | 사용자별 확인·관심 상태
+explain_feedback | id, user_id, signal_id, helpful, reason, created_at | 설명 품질 피드백
+--- TABLE 17 ---
+Method | Endpoint | 설명 | 권한
+GET | /api/signals | 통합 신호 목록과 필터 | User/PRO
+GET | /api/signals/{id} | 신호 근거·상태·성과 상세 | User/PRO
+PATCH | /api/signals/{id}/user-state | 확인·관심·숨김 상태 변경 | User
+GET | /api/signals/{id}/performance | 평가 구간별 성과 | PRO
+POST | /api/alerts/simulate | 알림 예상 발생 빈도 계산 | User/PRO
+GET | /api/reports/weekly | 개인 주간 리포트 | User/PRO
+POST | /api/explain/{signalId}/feedback | Explain 피드백 저장 | User
+GET | /api/admin/data-quality | 공급사·종목별 품질 상태 | Admin
+--- TABLE 18 ---
+상태 | 의미 | 주요 전환
+CREATED | 가상 주문 생성 | 사용자 또는 자동 규칙 생성
+OPEN | 체결 대기 | 주문 검증 완료
+PARTIALLY_FILLED | 일부 수량 체결 | 체결 가능 수량 부족
+FILLED | 전체 수량 체결 | 포지션 반영
+CANCELED | 사용자 또는 시스템 취소 | 만료·사용자 요청
+REJECTED | 체결 조건 미충족 | 데이터 오류·위험 한도 초과
+EXPIRED | 유효 시간이 지난 주문 | time-in-force 종료
+--- TABLE 19 ---
+항목 | 초기 정책 | 비고
+수수료 | 거래소·시장별 설정값 | 적용일과 버전 저장
+주문 지연 | 신호 후 최소 1 tick 또는 다음 평가 주기 | 즉시 체결 과대평가 방지
+참여율 | 최근 거래량의 제한된 비율 | 대형 주문 체결 제한
+슬리피지 | 호가 기반 우선, 추정 모델 보조 | 추정 여부 노출
+유동성 차단 | 거래대금·스프레드 임계값 | Risk Guard와 공유
+--- TABLE 20 ---
+검증 | WARN 조건 | BLOCK 조건
+종목 집중도 | 권장 비중 초과 | 사용자 최대 비중 초과
+상관관계 | 유사 자산 노출 증가 | 그룹 한도 초과
+일일 손실 | 경고 수준 도달 | 손실 한도 도달
+유동성 | 추정 슬리피지 증가 | 체결 불가능 수준
+데이터 품질 | PARTIAL | INVALID
+--- TABLE 21 ---
+항목 | 설명
+Sample Size | 동일 엔진·패턴·시장·timeframe·국면의 평가 완료 표본 수
+Wilson Interval | Hit Rate의 표본 불확실성을 반영한 신뢰구간
+Stability | 최근 기간과 전체 기간 성과 차이
+Data Quality | 성과 표본의 데이터 품질과 추정 체결 비율
+Freshness | 최근 시장 데이터가 표본에 충분히 포함됐는지 여부
+--- TABLE 22 ---
+테이블 | 주요 컬럼 | 설명
+paper_accounts | id, user_id, base_currency, initial_balance, status, simulation_run | 가상 계정
+paper_orders | id, account_id, signal_id, side, type, price, quantity, status, fee_model_version | 가상 주문
+paper_fills | id, order_id, price, quantity, fee, slippage, liquidity_source, filled_at | 가상 체결
+paper_positions | id, account_id, instrument_id, quantity, avg_price, realized_pnl | 가상 포지션
+portfolio_risk_snapshots | account_id, exposure_json, heat, var_value, warnings_json, created_at | 위험 스냅샷
+market_regimes | market, timeframe, regime, confidence, regime_version, snapshot_json, detected_at | 시장 국면
+signal_confidence | signal_id, sample_size, grade, interval_low, interval_high, evidence_json | 신호 신뢰도
+feature_flags | key, environment, enabled, rollout_percent, config_json | 기능 통제
+usage_events | user_id, type, quantity, cost, occurred_at | 사용량과 원가
+--- TABLE 23 ---
+Method | Endpoint | 설명 | 권한
+POST | /api/paper/accounts | 가상 계정 생성·초기화 | User
+POST | /api/paper/orders | 가상 주문 생성 | User
+DELETE | /api/paper/orders/{id} | 미체결 주문 취소 | User
+GET | /api/paper/portfolio | 포지션·손익·위험 조회 | User
+GET | /api/paper/performance | 가상 운용 성과 | User/PRO
+GET | /api/risk/pre-trade | 주문 전 위험 검증 | User
+GET | /api/regimes | 시장별 현재 국면 | User/PRO
+GET | /api/signals/{id}/confidence | 표본 기반 신뢰도 | User/PRO
+GET | /api/admin/feature-flags | 기능 상태 조회 | Admin
+PATCH | /api/admin/feature-flags/{key} | 기능 배포·중단 | SUPER_ADMIN
+--- TABLE 24 ---
+단계 | 필수 조건 | 결과
+Research | 아이디어·지표·가설 사전 기록 | 검증 대기
+Validation | Walk-forward와 비용 반영 | 후보 승인·기각
+Shadow | 사용자 노출 없이 실시간 실행 | 안정성 평가
+Paper Beta | 가상 체결과 위험 한도 적용 | 제한 공개
+Production | 성과·보안·운영 게이트 통과 | 정식 노출
+Retired | 성과 악화·데이터 문제·정책 위반 | 신규 신호 중단
+--- TABLE 25 ---
+검사 | 주기 | 불일치 처리
+현금 원장 합계 | 실시간·일일 | 계정 동결 후 재계산
+주문-체결 수량 | 체결 시·일일 | 중복·초과 체결 조사
+체결-포지션 | 체결 시·일일 | 원장 기반 포지션 재구축
+성과-원장 | 일일 | 손익 스냅샷 재생성
+이벤트 처리 | 지속 | 미처리 이벤트 재실행
+--- TABLE 26 ---
+영역 | 초기 SLO | 핵심 지표
+Public API | 월 99.9% | 가용성, p95 지연
+Scanner | 예정 실행 99.5% | 지연·누락 실행
+Notification | 정상 신호 99% 처리 | 실패·중복·지연
+Paper Ledger | 정합성 100% | 대사 불일치
+Market Data | 공급사별 별도 목표 | 최신성·결측률
+--- TABLE 27 ---
+테이블 | 주요 컬럼 | 설명
+experiment_runs | id, strategy_id, hypothesis, dataset_split, parameters_json, status, result_json | 전략 검증 이력
+data_lineage | id, parent_id, entity_type, entity_id, revision, source_hash, created_at | 데이터 계보
+correction_events | id, lineage_id, reason, before_hash, after_hash, impact_json, corrected_at | 정정과 영향 분석
+ledger_entries | id, account_id, type, amount, currency, reference_type, reference_id, idempotency_key | 가상 계정 원장
+reconciliation_runs | id, account_id, type, status, difference_json, started_at, finished_at | 원장 대사
+user_sessions | id, user_id, device_id, refresh_token_hash, last_seen_at, revoked_at | 세션·기기 관리
+security_events | id, user_id, type, risk_score, action, detail_json, created_at | 보안·남용 이벤트
+product_experiments | id, key, hypothesis, allocation_json, metrics_json, status | 제품 A/B 실험
+incident_records | id, severity, service, status, impact, timeline_json, resolved_at | 장애 기록
+--- TABLE 28 ---
+Method | Endpoint | 설명 | 권한
+GET | /api/me/sessions | 활성 세션·기기 조회 | User
+DELETE | /api/me/sessions/{id} | 개별 세션 폐기 | User
+POST | /api/me/reauth | 중요 작업 재인증 | User
+GET | /api/notifications/preferences | Quiet Hours·요약 설정 | User
+PATCH | /api/notifications/preferences | 알림 전달 정책 변경 | User
+GET | /api/admin/reconciliation | 원장 대사 결과 | Admin
+POST | /api/admin/data-corrections | 데이터 정정 영향 분석 요청 | Admin
+GET | /api/admin/incidents | 장애 현황과 기록 | Admin
+POST | /api/admin/experiments | 통제된 실험 생성 | Admin
+POST | /api/admin/kill-switch/{key} | 긴급 기능 중단 | SUPER_ADMIN
+--- TABLE 29 ---
+영역 | 필수 통과 기준
+전략 검증 | 시간 순서 분리, 비용 반영, Walk-forward, 탐색 이력 저장
+데이터 | 계보 추적, 결측 복구, 정정 영향 분석, 재처리 멱등성
+원장 | 대사 불일치 0건, 중복 요청 방지, 장애 복구 테스트 통과
+보안 | 치명적·높음 취약점 0건, 관리자 2FA, 비밀값 저장소 분리
+알림 | 중복·실패·지연 기준 충족, Quiet Hours와 만료 처리 검증
+복구 | 백업 복원 성공, 목표 RTO·RPO 확인, Runbook 훈련 완료
+법무·데이터 | 약관·개인정보·데이터 재배포 권한 검토 완료
+모바일 | 핵심 E2E, 접근성, 저속망, 딥링크 테스트 통과
+--- TABLE 30 ---
+작업 | 우선순위 | 격리 정책 | 과부하 처리
+시장 데이터 | 최상 | provider·market별 worker | 오래된 중간 tick 축약
+신호 스캔 | 높음 | timeframe별 queue | 다음 주기 중복 실행 방지
+알림 | 높음 | 채널별 worker | 만료·중복 제거
+성과 평가 | 보통 | batch worker | 지연 허용
+백테스트·리포트 | 낮음 | 사용자 quota queue | 일시 중단·재개
+--- TABLE 31 ---
+원가 단위 | 측정값 | 통제
+활성 사용자 | 월 인프라·데이터 비용/MAU | 플랜별 마진
+신호 | 스캔·저장·알림 비용/건 | 저가치 신호 억제
+백테스트 | CPU·데이터 읽기 비용/회 | quota·예약 실행
+AI 요청 | 토큰·캐시 비용/회 | 모델·길이 제한
+공급사 | 호출·라이선스 월 비용 | 캐시·계약 재검토
+--- TABLE 32 ---
+테이블 | 주요 컬럼 | 설명
+event_outbox | id, aggregate_type, aggregate_id, event_type, schema_version, payload, published_at | 트랜잭션 이벤트 발행
+consumer_offsets | consumer, partition_key, last_event_id, processed_at | 처리 위치·멱등성
+provider_scorecards | provider, latency, error_rate, gap_rate, cost, rights_status | 공급사 평가
+cost_usage_daily | date, service, user_id, metric, quantity, cost | 원가 집계
+capacity_snapshots | service, throughput, saturation, queue_age, captured_at | 용량 추세
+--- TABLE 33 ---
+ID | 사용자 결과 | 검증 방식 | 출시 필수
+AUTH-01 | 가입·로그인·세션 폐기 | API·E2E·보안 테스트 | 예
+MARKET-01 | 최신 코인 시세·캔들 조회 | 계약·결측·지연 테스트 | 예
+SCAN-01 | 저장 조건과 패턴 결과 조회 | 골든·부하·재현성 테스트 | 예
+ALERT-01 | 중복 없는 알림 수신 | E2E·지연·중복 테스트 | 예
+PAPER-01 | 가상 주문·체결·손익 확인 | 원장 대사·복구 테스트 | 예
+ADMIN-01 | 장애·품질·Feature Flag 운영 | 권한·감사 테스트 | 예
+--- TABLE 34 ---
+계층 | 대상 | 최소 증거
+Unit | 도메인 계산·상태 전환 | 경계값·오류 경로
+Contract | Provider·API·이벤트 | 스키마 호환
+Integration | DB·Redis·Queue | 트랜잭션·재시도
+Golden | 패턴·성과·체결 | 고정 입력 결과
+E2E | 가입부터 알림·Paper 체결 | 핵심 사용자 흐름
+Non-functional | 부하·보안·복구·접근성 | 출시 게이트 보고서
+--- TABLE 35 ---
+영역 | 완료 기준
+제품 | P0 사용자 흐름과 빈·오류 상태 완료
+엔진 | 골든 테스트와 미래 데이터 참조 방지 통과
+데이터 | 지연·결측·정정·계보 검증 통과
+원장 | 대사 불일치 0건과 복구 훈련 통과
+보안 | 높음 이상 미해결 취약점 0건
+운영 | SLO·Runbook·대시보드·온콜 준비
+법무 | 약관·개인정보·데이터 권리 확인
+지원 | FAQ·문의·장애 공지 절차 준비
+--- TABLE 36 ---
+원칙 | 요구사항
+근거성 | 표시 문장은 실제 입력 지표·규칙에 연결
+불확실성 | 표본 부족·추정 체결·데이터 지연 명시
+균형성 | 긍정 근거와 무효화·위험 요인을 함께 표시
+일관성 | 점수·상태·차트와 모순 금지
+가독성 | 초보·전문가 모드별 정보 밀도 조절
+비권유성 | 매수·매도 지시와 확정적 수익 표현 금지
+--- TABLE 37 ---
+테이블 | 주요 컬럼 | 설명
+support_cases | id, user_id, category, priority, status, owner_id, sla_due_at | 고객 문의
+signal_disputes | id, signal_id, user_id, reason, resolution, correction_id | 신호 이의제기
+explain_quality_reviews | template_version, fixture_id, result, violations_json | 설명 품질 검증
+consent_records | user_id, consent_type, version, granted, occurred_at | 동의 이력
+data_export_jobs | user_id, scope, status, expires_at, completed_at | 데이터 내보내기
+--- TABLE 38 ---
+지표 | 목적
+First Response Time | 지원 응답성
+Resolution Time | 문제 해결 속도
+Reopen Rate | 답변 품질
+Signal Correction Rate | 신호 신뢰도
+Explain Helpful Rate | 설명 유용성
+Complaint Recurrence | 근본 개선 여부
+--- TABLE 39 ---
+단계 | 검사 | 결과
+Submission | 소유권·설명·파라미터·위험 고지 | 검토 대기
+Automated Review | 보안·성능·미래 참조·비용 | 통과·반려
+Evidence Review | 표본·Walk-forward·Paper 성과 | 등급 부여
+Limited Release | 제한 사용자·모니터링 | 확대·중단
+Ongoing Review | 성과 악화·신고·버전 변경 | 유지·경고·퇴출
+--- TABLE 40 ---
+테이블 | 주요 컬럼 | 설명
+oauth_clients | id, owner_id, name, redirect_uris, scopes, status | 외부 앱
+api_credentials | id, owner_id, token_hash, scopes, expires_at, revoked_at | API 자격증명
+webhook_endpoints | id, owner_id, url, secret_version, events, status | Webhook 설정
+strategy_packages | id, creator_id, version, manifest_json, review_status, artifact_hash | 전략 패키지
+marketplace_listings | strategy_id, price, visibility, evidence_grade, status | 전략 상품
+creator_ledger | creator_id, type, amount, reference_id, occurred_at | 제작자 정산 원장

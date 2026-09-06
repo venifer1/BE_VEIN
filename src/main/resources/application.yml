@@ -1,0 +1,262 @@
+spring:
+  application:
+    name: vein-backend
+  datasource:
+    # 접속 정보는 전부 환경변수. 로컬은 .env(=.env.example 복사본)에서 주입한다.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/vein}
+    username: ${DB_USERNAME:vein}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate          # 스키마는 Flyway가 소유
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
+    deserialization:
+      fail-on-unknown-properties: false   # tolerate extra client fields (no 500 on unknown)
+    time-zone: UTC
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
+
+server:
+  error:
+    include-stacktrace: never
+
+# Upbit provider
+vein:
+  # JWT (부록 G-5) — env vars override; keys are namespaced under vein.security
+  # to avoid self-referential placeholder resolution (JWT_SECRET: ${JWT_SECRET}).
+  security:
+    jwt:
+      # 기본값 없음(fail-fast). 미설정 시 기동 실패 — HS256용 32바이트 이상 랜덤값 필수.
+      secret: ${JWT_SECRET}
+      access-ttl: ${JWT_ACCESS_TTL:900}
+      refresh-ttl: ${JWT_REFRESH_TTL:1209600}
+  # Python equity sidecar (yfinance US + pykrx KR) — REAL equity candles/index.
+  # Optional infra: on ANY failure the backend falls back to the synthetic stub.
+  sidecar:
+    base-url: ${SIDECAR_URL:http://localhost:8099}
+  upbit:
+    base-url: https://api.upbit.com
+  binance:
+    base-url: https://api.binance.com
+    futures-base-url: https://fapi.binance.com
+  liquidation:
+    enabled: ${LIQUIDATION_ENABLED:${INGESTION_ENABLED:false}}
+    ws-url: ${LIQUIDATION_WS_URL:wss://fstream.binance.com/market/ws/!forceOrder@arr}
+    reconnect-ms: ${LIQUIDATION_RECONNECT_MS:5000}
+    spike-alert-cooldown-sec: ${LIQUIDATION_SPIKE_ALERT_COOLDOWN_SEC:1800}
+  coingecko:
+    base-url: https://api.coingecko.com/api/v3
+  alternativeme:
+    base-url: https://api.alternative.me
+  fx:
+    primary-url: https://open.er-api.com/v6/latest/USD
+    fallback-url: https://api.exchangerate-api.com/v4/latest/USD
+  # --- Phase 3 aux providers ---
+  defillama:
+    base-url: https://api.llama.fi
+  bybit:
+    base-url: https://api.bybit.com
+  bloomberg:
+    feed-url: https://feeds.bloomberg.com/markets/news.rss
+  # Phase 3 refresh cadences (ms); all schedulers gated by ingestion.enabled
+  news:
+    refresh-ms: ${NEWS_REFRESH_MS:15000}
+  tvl:
+    refresh-ms: ${TVL_REFRESH_MS:60000}
+  supply:
+    refresh-ms: ${SUPPLY_REFRESH_MS:60000}
+  funding:
+    refresh-ms: ${FUNDING_REFRESH_MS:300000}
+  theme:
+    refresh-ms: ${THEME_REFRESH_MS:300000}
+  # Scalp is heavy REST polling: gated by its OWN flag, default OFF.
+  scalp:
+    enabled: ${SCALP_ENABLED:false}
+    refresh-ms: ${SCALP_REFRESH_MS:1000}
+  terminal:
+    # market indices + kimchi premium refresh interval (ms); gated by ingestion.enabled
+    refresh-ms: ${TERMINAL_REFRESH_MS:60000}
+  ingestion:
+    enabled: ${INGESTION_ENABLED:false}
+    initial-backfill-count: 1000
+  algorithm:
+    abc-version: abc-java-1.0.0
+  pattern-score:
+    completion-weight: 30
+    volume-weight: 20
+    trend-weight: 20
+    volatility-weight: 10
+    news-weight: 20
+  web-push:
+    # VAPID 키쌍. 미설정 시 web push 비활성(WebPushService.isConfigured()=false)으로 정상 degrade.
+    public-key: ${WEB_PUSH_PUBLIC_KEY:}
+    private-key: ${WEB_PUSH_PRIVATE_KEY:}
+    subject: ${WEB_PUSH_SUBJECT:mailto:admin@vein.local}
+    ttl-sec: ${WEB_PUSH_TTL_SEC:3600}
+
+# springdoc / Swagger UI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# Resilience4j per external provider
+resilience4j:
+  ratelimiter:
+    instances:
+      upbit:
+        limit-for-period: 8
+        limit-refresh-period: 1s
+        timeout-duration: 3s
+      binance:
+        limit-for-period: 10
+        limit-refresh-period: 1s
+        timeout-duration: 3s
+      binance_futures:
+        # per-symbol OI + long/short ratio calls; stay well under the 2400/min IP limit
+        limit-for-period: 10
+        limit-refresh-period: 1s
+        timeout-duration: 3s
+      coingecko:
+        # public keyless tier is ~5-15 req/min; stay conservative
+        limit-for-period: 5
+        limit-refresh-period: 60s
+        timeout-duration: 5s
+      alternativeme:
+        limit-for-period: 5
+        limit-refresh-period: 60s
+        timeout-duration: 5s
+      exchangerate:
+        limit-for-period: 5
+        limit-refresh-period: 60s
+        timeout-duration: 5s
+      defillama:
+        limit-for-period: 4
+        limit-refresh-period: 1s
+        timeout-duration: 5s
+      bybit:
+        limit-for-period: 8
+        limit-refresh-period: 1s
+        timeout-duration: 5s
+      bloomberg:
+        limit-for-period: 4
+        limit-refresh-period: 60s
+        timeout-duration: 10s
+  retry:
+    instances:
+      upbit:
+        max-attempts: 3
+        wait-duration: 500ms
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.vein.market.provider.upbit.UpbitApiException
+      binance:
+        max-attempts: 3
+        wait-duration: 500ms
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.vein.market.provider.ProviderException
+      binance_futures:
+        max-attempts: 2
+        wait-duration: 400ms
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.vein.market.provider.ProviderException
+      coingecko:
+        # back off harder on 429 (Retry-After surfaced via ProviderException)
+        max-attempts: 3
+        wait-duration: 2s
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.vein.market.provider.ProviderException
+      alternativeme:
+        max-attempts: 3
+        wait-duration: 1s
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.vein.market.provider.ProviderException
+      exchangerate:
+        max-attempts: 2
+        wait-duration: 1s
+        retry-exceptions:
+          - com.vein.market.provider.ProviderException
+      defillama:
+        max-attempts: 3
+        wait-duration: 1s
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.vein.market.provider.ProviderException
+      bybit:
+        max-attempts: 3
+        wait-duration: 500ms
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.vein.market.provider.ProviderException
+      bloomberg:
+        max-attempts: 3
+        wait-duration: 1s
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.vein.market.provider.ProviderException
+  circuitbreaker:
+    instances:
+      upbit:
+        sliding-window-size: 20
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 30s
+      binance:
+        sliding-window-size: 20
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 30s
+      binance_futures:
+        sliding-window-size: 20
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 30s
+      coingecko:
+        sliding-window-size: 10
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 60s
+      alternativeme:
+        sliding-window-size: 10
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 60s
+      exchangerate:
+        sliding-window-size: 10
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 60s
+      defillama:
+        sliding-window-size: 10
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 60s
+      bybit:
+        sliding-window-size: 20
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 30s
+      bloomberg:
+        sliding-window-size: 10
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 60s
