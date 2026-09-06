@@ -141,6 +141,12 @@ GET /api/v1/signals/performance/summary?horizon=1d&bucket=MONTH
 
 ### 단계 2 (3~6개월) — 여기가 실제 작업
 
+> **코드 구현 완료 (R34~R36, 2026-09-06).** ①~⑤ 5종 모두 구현·실데이터 검증됨:
+> ① `POST /auth/signup`(R35) · ② `/public/reports/weekly[.md]`(R34) · ③ 유입추적
+> `signup_source/referrer`(V23, R35) · ④ 후원 링크(R36) · ⑤ FE 랜딩 `/landing`(R34/R36).
+> **단, 착수 게이트("리포트 구독자가 실제로 붙는다")는 아직 미확인** — 지금은 그릇만
+> 만들어 둔 상태이고, 실제 유료화·확장 판단은 구독자 곡선을 본 뒤다.
+
 #### 🔴 ① 회원가입 API가 없다 ★★최우선
 
 ```
