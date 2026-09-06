@@ -13,10 +13,12 @@
 ## enum (확장)
 - **market**: `CRYPTO | US | KOSPI | KOSDAQ`
 - **timeframe**: 코인 `15m|1h|4h|1d|3d|1w|1M`, 주식 `1d|3d|1w` (서버가 market별 지원셋 반환)
-- **signal.type (패턴 4종)**: `ABC | TOP | IMALOL | TRIANGLE`
+- **signal.type (패턴 3종)**: `ABC | TOP | IMALOL`
+  - ※ `TRIANGLE`(삼각수렴)은 **의도적으로 제거됨**(V13/V14). 탐지기·enum·DB 데이터 모두 정리 완료.
 - **signal.status**: `DETECTED | NEAR_COMPLETION | INVALIDATED | EXPIRED | CLOSED`
-- **evidence.type**: `PIVOT_0 | PIVOT_A | PIVOT_B | C_TARGET | TREND_UPPER | TREND_LOWER | BOLL_UPPER | BOLL_MID | BOLL_LOWER | MATCH_BOX`
-- **triangle subtype**: `SYMMETRIC | ASCENDING | DESCENDING`
+- **evidence.type**: `PIVOT_0 | PIVOT_A | PIVOT_B | C_TARGET | BOLL_UPPER | BOLL_MID | BOLL_LOWER | MATCH_BOX`
+  - (`TREND_UPPER`/`TREND_LOWER`는 TRIANGLE 전용이었으므로 더 이상 생성되지 않음)
+- ~~**triangle subtype**~~: 제거됨 (`subtype`은 항상 NULL)
 - **news.source**: `TELEGRAM | BLOOMBERG`
 - **tvl.mode**: `PROTOCOL | CHAIN`
 
@@ -43,10 +45,10 @@
 ## 3. 관심종목(즐겨찾기) — v1 유지, market 무관 통합
 | GET `/watchlists/default` | POST/DELETE `/watchlists/default/items[/{instrument_id}]` |
 
-## 4. 스캐너 (패턴 4종 통합) — `signal`/`scanner`/`scalp`
+## 4. 스캐너 (패턴 3종 통합) — `signal`/`scanner`/`scalp`
 | Method | Path | 설명 |
 |---|---|---|
-| GET | `/signals` | `?type=ABC\|TOP\|IMALOL\|TRIANGLE & market & timeframe & instrument_id & watchlist_only & status & near_only & cursor`. 카드: type, market, instrument, timeframe, status, score, current_price, **c_target(ABC/TOP)**, **subtype(TRIANGLE)**, pivots 요약(0/A/B 일자), detected_at, freshness |
+| GET | `/signals` | `?type=ABC\|TOP\|IMALOL & market & timeframe & instrument_id & watchlist_only & status & near_only & cursor`. 카드: type, market, instrument, timeframe, status, score, current_price, **c_target(ABC/TOP)**, pivots 요약(0/A/B 일자), detected_at, freshness |
 | GET | `/signals/{id}` | evidence(피벗/추세선/볼린저/매치박스), invalidation, c_target, chart_range, algorithm_version |
 | GET | `/signals/{id}/explain` | Pattern Score(완성도30·거래량20·추세20·변동성10·뉴스20), 규칙 기반 근거·위험·다음 확인, Risk Guard(PASS/WARN/BLOCK), 1d 성과 표본 기반 Confidence |
 | GET/POST | `/explain/{signalId}/feedback` | Explain 유용성 집계·내 평가 조회 / `{helpful,reason?}` 사용자별 평가 upsert. reason=`UNCLEAR|INACCURATE|MISSING_RISK|TOO_COMPLEX|OTHER` |
@@ -70,8 +72,8 @@
 | GET | `/themes/{id}/constituents` | 구성종목 + 분류 source/confidence |
 | GET | `/funding-arb` | `?sort=` 업비트 현물 vs Bybit 선물 펀딩비 차익(symbol, funding_pct, upbit_price, bybit_price, next_funding_at, expected_1x_pct, expected_2x_pct). 수수료 Upbit 0.05%/Bybit 0.055% 왕복 반영 |
 
-## 7. 알림 — `alert`/`notification` (패턴 4종 + 가격 지원)
-| GET `/alerts` (목록) | POST `/alerts` `{instrument_id, signal_type(ABC/TOP/IMALOL/TRIANGLE), timeframe, market, cooldown_sec}` | PATCH `/alerts/{id}` `{enabled,cooldown_sec}` |
+## 7. 알림 — `alert`/`notification` (패턴 3종 + 가격 지원)
+| GET `/alerts` (목록) | POST `/alerts` `{instrument_id, signal_type(ABC/TOP/IMALOL), timeframe, market, cooldown_sec}` | PATCH `/alerts/{id}` `{enabled,cooldown_sec}` |
 | GET `/notifications?unread_only&cursor` | PATCH `/notifications/{id}/read` · POST `/notifications/{id}/deliveries/web-push` (브라우저 표시 성공 멱등 확인) |
 
 ## 8. 시스템 — `ops`
@@ -82,7 +84,8 @@
 ## DB 추가 테이블 (Flyway V6+, 기존 V1~V5 유지)
 - **V6 market/terminal**: `market_indices`(key,value,classification,collected_at), `kimchi_premium`(instrument_id,upbit_price,binance_price,usdkrw,premium_pct,collected_at)
 - **V6 instruments 확장**: market enum에 US/KOSPI/KOSDAQ 추가, `provider_symbols`에 BINANCE/YFINANCE/PYKRX 매핑
-- **V7 signal 확장**: `pattern_signals.type` ABC/TOP/IMALOL/TRIANGLE, `subtype`(triangle), `c_target` NUMERIC, evidence 타입 확장(볼린저/매치박스)
+- **V7 signal 확장**: `pattern_signals.type` ABC/TOP/IMALOL, `c_target` NUMERIC, evidence 타입 확장(볼린저/매치박스)
+- **V13/V14 triangle 제거**: TRIANGLE 신호·evidence·성과·알림 정리, `subtype` 미사용
 - **V8 news**: `news_items`(id,source,title,body,url,published_at,collected_at,uq(source,url))
 - **V8 tvl/supply**: `tvl_snapshots`, `supply_snapshots`
 - **V8 theme**: `themes`, `theme_constituents`(classification_source,confidence)
@@ -94,11 +97,11 @@
 
 ## 모바일 IA (하단탭 5 + 스택 화면)
 1. **홈/터미널** `/` — 시장지표 카드(공포탐욕·도미넌스·김프) · 통합검색 · 관심(즐겨찾기) · 종목→차트
-2. **스캐너** `/scanner` — 패턴 4종 필터(type/market/timeframe/near_only) · 결과카드 · 상세 오버레이차트 · 틱띄기 서브탭
+2. **스캐너** `/scanner` — 패턴 3종 필터(type/market/timeframe/near_only) · 결과카드 · 상세 오버레이차트 · 틱띄기 서브탭
 3. **속보** `/news` — 텔레그램/Bloomberg 피드
 4. **데이터** `/data` — TVL · 유통량 · 테마/섹터 · 펀비차익 (서브탭)
 5. **설정** `/settings` — 알림규칙 · 데이터출처 · 진단
 
 스택: 종목상세`/instruments/[id]`, 신호상세`/signals/[id]`, TVL상세, 테마구성종목, 스캘핑상세.
 필수 상태(전 화면): Loading·Empty·Stale·Partial·Fatal·Offline. 컴플라이언스 "투자 참고용·투자권유 아님" 노출.
-차트 오버레이: ABC/TOP=0-A-B 피벗 markers + C예상가 priceLine, TRIANGLE=H/L 추세선 LineSeries, IMALOL=볼린저밴드 + 매치박스.
+차트 오버레이: ABC/TOP=0-A-B 피벗 markers + C예상가 priceLine, IMALOL=볼린저밴드 + 매치박스.
