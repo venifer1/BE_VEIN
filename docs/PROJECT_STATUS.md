@@ -105,6 +105,7 @@
 | R35 | **공개 회원가입** — `POST /auth/signup`(즉시 승인·자동로그인 토글) + 유입추적 컬럼(V23) + 가입 레이트리밋 (MONETIZATION 단계2 ①·③) |
 | R36 | **FE 단계2 마감** — 비로그인 랜딩(`/landing`, 실측 적중률+가입폼+리포트 링크) + 후원 링크 (MONETIZATION 단계2 ④·⑤). **단계2 코드 5종 ①~⑤ 완료** |
 | R37 | **거시경제/시장국면 엔진** (Track A #1) — `com.vein.macro`: 국면(BULL/BEAR/RANGE/TRANSITION) 내부 데이터로 판정 + FRED 선택 보강(금리차·M2·DXY) + `GET /macro[/regime]` + 홈 국면 배너 |
+| R38 | **틱띄기 실시간화** (Track A #4) — `WebSocketScalpCollector`: Upbit WS(orderbook+trade) 지속 연결로 TPS/micro-vol 정확 산출, `ws-enabled` 시 @Primary로 REST 폴러 대체 |
 
 ---
 
@@ -119,7 +120,7 @@
 | **Flutter 앱** | **`flutter analyze` 한 번도 안 돌아감.** `android/`·`ios/` 폴더 없음(`flutter create .` 필요). 모의투자·백테스트·조건검색·Admin·파생·청산·Explain 피드백 **전부 미연동** |
 | **주식 데이터** | 사이드카 켜져 있으면 실데이터, 꺼져 있으면 **합성 스텁으로 조용히 폴백**. 스텁인지 구분하려면 `/system/status` 확인 |
 | **텔레그램 속보** | 사이드카 경유. 사이드카 없으면 Bloomberg RSS만 |
-| **틱띄기** | REST 폴링 근사. 레거시의 WS 실시간 대비 정확도 낮음 |
+| **틱띄기** | **WS 실시간 가능(R38).** `vein.scalp.ws-enabled=true`면 Upbit WebSocket 수집기(orderbook+trade 연속 스트림)가 @Primary. 기본은 REST 폴링 근사(폴백) |
 | **거시경제/시장국면** | **구현됨(R37).** `com.vein.macro` — 국면은 내부 데이터(나스닥 추세+공포탐욕)로 항상 판정. 금리차·M2·DXY는 **FRED 키 설정 시** 채워짐(현재 키 미설정이라 해당 블록 null) |
 
 **실연동(키 불필요)**: Upbit · Binance · CoinGecko · alternative.me · DefiLlama · Bybit · Bloomberg RSS
@@ -143,7 +144,7 @@
    - → *왜 1순위인가: 개별 신호를 볼 때마다 "지금 시장이 어떤 국면인지"를 매번 따로 확인하고 있다. 그게 자동화되면 판단 시간이 줄어든다.*
 2. **사이드카를 별도 저장소로 분리** — 지금은 레거시 private 저장소 안에 있어서 백엔드만 클론하면 재현이 안 된다
 3. **실사용 마찰 제거** — 실제로 며칠 써보면서 걸리는 것부터 (알림 노이즈? 신호 과다? 차트 조작감?)
-4. **틱띄기 실시간화** — 폴링 근사를 WS로. 쓸 거면 정확해야 하고, 안 쓸 거면 빼는 게 낫다
+4. ✅ **틱띄기 실시간화** (R38) — Upbit WS 수집기 구현. `vein.scalp.ws-enabled=true`로 활성(라이브 검증됨), 기본은 REST 폴백
 
 ### Track B — 남에게 보여주려면
 

@@ -96,6 +96,12 @@ vein:
   scalp:
     enabled: ${SCALP_ENABLED:false}
     refresh-ms: ${SCALP_REFRESH_MS:1000}
+    # 틱띄기 실시간화: true면 Upbit WebSocket 수집기(WebSocketScalpCollector)가 @Primary로
+    # REST 폴러를 대체 — orderbook+trade 연속 스트림으로 TPS/micro-vol을 정확히 산출.
+    # false(기본)면 기존 REST 폴링 근사. scalp.enabled와 함께 켜야 스코어까지 돈다.
+    ws-enabled: ${SCALP_WS_ENABLED:false}
+    ws-url: wss://api.upbit.com/websocket/v1
+    reconnect-ms: ${SCALP_RECONNECT_MS:5000}
   terminal:
     # market indices + kimchi premium refresh interval (ms); gated by ingestion.enabled
     refresh-ms: ${TERMINAL_REFRESH_MS:60000}

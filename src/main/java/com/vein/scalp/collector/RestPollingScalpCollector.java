@@ -25,9 +25,10 @@ import lombok.extern.slf4j.Slf4j;
  * sampled, not exact. It is sufficient to drive the ranking contract end-to-end
  * without a heavyweight persistent WS client.
  *
- * <p>TODO: replace REST approximation with an Upbit WebSocket (orderbook+trade)
- * collector per upbit_ws.py — implement {@link ScalpCollector} over the WS feed and
- * register it as {@code @Primary} in place of this bean.
+ * <p>The real-time replacement now exists: {@link WebSocketScalpCollector} maintains an
+ * Upbit WebSocket (orderbook+trade) feed and, when {@code vein.scalp.ws-enabled=true},
+ * is {@code @Primary} in place of this bean. This poller remains the default and the
+ * fallback when the WS path is disabled.
  */
 @Component
 @Slf4j
