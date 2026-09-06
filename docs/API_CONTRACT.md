@@ -80,6 +80,15 @@
 ## 8. 시스템 — `ops`
 | GET `/system/status` | provider별 freshness(upbit/binance/coingecko/defillama/yfinance/pykrx/bybit/telegram/bloomberg), scanner status, build version |
 
+## 8-1. 거시경제 / 시장국면 — `macro` (§15.1·§39)
+| Method | Path | 설명 |
+|---|---|---|
+| GET | `/macro` | 스냅샷: `regime`(항상) + `yield_curve`·`m2`·`dxy`(FRED 키 있을 때) + `sources[]` + `generated_at`. ~10분 캐시 |
+| GET | `/macro/regime` | 국면만: `{label(BULL\|BEAR\|RANGE\|TRANSITION), score, summary, signals[]{key,direction(BULLISH\|BEARISH\|NEUTRAL),detail}}` |
+
+- **국면은 내부 데이터로 항상 판정** — 나스닥 지수 추세(최근 ~20p 모멘텀) + 공포탐욕(위험선호/회피). 두 신호의 방향 합산 점수로 라벨(±2 이상 BULL/BEAR, 혼재 TRANSITION, 그 외 RANGE).
+- **FRED 키(`FRED_API_KEY`) 설정 시** 금리차(DGS2/DGS3MO/DGS10 → 10Y-2Y·10Y-3M·역전여부), M2(M2SL, YoY), 달러인덱스(DTWEXBGS, 추세)를 보강하고 각각 국면 신호로 반영. 미설정 시 해당 블록 null·조용히 생략(사이드카 스텁-폴백과 동일).
+
 ## 9. 공개 콘텐츠 (비로그인) — `report`
 | Method | Path | 설명 |
 |---|---|---|

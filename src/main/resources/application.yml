@@ -46,6 +46,13 @@ vein:
   # false면 승인제(PENDING) 복귀. 봇 가입 급증 시 env로 즉시 잠글 수 있다.
   signup:
     auto-approve: ${SIGNUP_AUTO_APPROVE:true}
+  # 거시경제/시장국면 엔진(§15.1·§39). 국면은 내부 데이터로 항상 판정되고,
+  # FRED 키가 있으면 금리차·M2·달러인덱스를 보강한다(없으면 조용히 생략).
+  #   무료 키 발급: https://fred.stlouisfed.org/docs/api/api_key.html
+  macro:
+    fred:
+      base-url: https://api.stlouisfed.org/fred
+      api-key: ${FRED_API_KEY:}
   # Python equity sidecar (yfinance US + pykrx KR) — REAL equity candles/index.
   # Optional infra: on ANY failure the backend falls back to the synthetic stub.
   sidecar:
