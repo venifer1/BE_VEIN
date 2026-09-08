@@ -2,12 +2,16 @@ package com.vein.signal;
 
 import java.util.List;
 
+import com.vein.macro.MacroDto.EventRisk;
 import com.vein.signal.SignalDto.InstrumentRef;
 
 /**
  * Full signal detail (API_CONTRACT v2 §4): summary fields plus per-type evidence
  * (ABC/TOP pivots + C_TARGET, TRIANGLE trendlines + subtype, IMALOL bollinger +
  * match boxes), invalidation, chart_range and algorithm_version.
+ *
+ * <p>{@code eventRisk} (R39): 이벤트 전후 변동성으로 신호 신뢰도가 흔들릴 수 있음을 읽기
+ * 시점에 붙이는 라벨. 임박 이벤트가 없으면 null.
  */
 public record SignalDetailDto(
         String id,
@@ -24,7 +28,8 @@ public record SignalDetailDto(
         List<EvidenceDto> evidence,
         InvalidationDto invalidation,
         ChartRange chartRange,
-        String algorithmVersion) {
+        String algorithmVersion,
+        EventRisk eventRisk) {
 
     /** One evidence point (pivot / trend / target / bollinger band / match box). */
     public record EvidenceDto(String type, String candleTime, String price, String payload) {

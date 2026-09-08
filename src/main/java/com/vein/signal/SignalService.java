@@ -16,6 +16,8 @@ import com.vein.common.Timeframe;
 import com.vein.common.TimeUtil;
 import com.vein.instrument.Instrument;
 import com.vein.instrument.InstrumentRepository;
+import com.vein.macro.EventRiskService;
+import com.vein.macro.MacroDto.EventRisk;
 import com.vein.signal.SignalDetailDto.ChartRange;
 import com.vein.signal.SignalDetailDto.EvidenceDto;
 import com.vein.signal.SignalDetailDto.InvalidationDto;
@@ -36,15 +38,18 @@ public class SignalService {
     private final SignalEvidenceRepository evidenceRepository;
     private final InstrumentRepository instrumentRepository;
     private final WatchlistService watchlistService;
+    private final EventRiskService eventRiskService;
 
     public SignalService(PatternSignalRepository signalRepository,
                          SignalEvidenceRepository evidenceRepository,
                          InstrumentRepository instrumentRepository,
-                         WatchlistService watchlistService) {
+                         WatchlistService watchlistService,
+                         EventRiskService eventRiskService) {
         this.signalRepository = signalRepository;
         this.evidenceRepository = evidenceRepository;
         this.instrumentRepository = instrumentRepository;
         this.watchlistService = watchlistService;
+        this.eventRiskService = eventRiskService;
     }
 
     /** Result of a signal list query. */
@@ -131,6 +136,10 @@ public class SignalService {
 
         ChartRange chartRange = chartRangeOf(ev);
 
+        EventRisk eventRisk = eventRiskService.assess(
+                signal.getMarket(),
+                instrument == null ? null : instrument.getSymbol());
+
         return new SignalDetailDto(
                 "sig_" + signal.getId(),
                 signal.getType().name(),
@@ -146,7 +155,8 @@ public class SignalService {
                 evidence,
                 invalidation,
                 chartRange,
-                signal.getAlgorithmVersion());
+                signal.getAlgorithmVersion(),
+                eventRisk);
     }
 
     private SignalDto toDto(PatternSignal s, Map<Long, Instrument> instruments) {

@@ -1,6 +1,6 @@
 # VEIN — 프로젝트 현황
 
-> **기준일:** 2026-09-06
+> **기준일:** 2026-09-08
 > **문서 성격:** 이 프로젝트가 왜 존재하고, 어디까지 왔고, 다음에 뭘 할지에 대한 단일 기준 문서.
 > 라운드별 상세 이력은 `WORKLOG.md`·`ROUND*.md`, API 계약은 `API_CONTRACT.md` 참조.
 
@@ -106,6 +106,7 @@
 | R36 | **FE 단계2 마감** — 비로그인 랜딩(`/landing`, 실측 적중률+가입폼+리포트 링크) + 후원 링크 (MONETIZATION 단계2 ④·⑤). **단계2 코드 5종 ①~⑤ 완료** |
 | R37 | **거시경제/시장국면 엔진** (Track A #1) — `com.vein.macro`: 국면(BULL/BEAR/RANGE/TRANSITION) 내부 데이터로 판정 + FRED 선택 보강(금리차·M2·DXY) + `GET /macro[/regime]` + 홈 국면 배너 |
 | R38 | **틱띄기 실시간화** (Track A #4) — `WebSocketScalpCollector`: Upbit WS(orderbook+trade) 지속 연결로 TPS/micro-vol 정확 산출, `ws-enabled` 시 @Primary로 REST 폴러 대체 |
+| R39 | **경제 캘린더 + 실적발표 D-day + EVENT_RISK** (Track A #1 완결) — `com.vein.macro`: keyless 경제 캘린더(FOMC/CPI 고정일 + NFP 규칙) `GET /macro/calendar`, 실적발표일(사이드카 yfinance `/equity/earnings`, 폴백), 신호 상세 `event_risk` 라벨(읽기 시점 confidence 힌트) + 홈 캘린더/신호 배지 |
 
 ---
 
@@ -136,12 +137,13 @@
 
 이게 끝나야 "데스크톱 터미널을 안 켜도 된다"가 성립한다.
 
-1. ✅ **거시경제 / 시장국면 엔진** (R37 구현 완료 — 국면 판정 가동, FRED 보강은 키 대기)
+1. ✅ **거시경제 / 시장국면 엔진** (R37+R39 구현 완료)
    - 장단기 금리차(10Y-2Y, 10Y-3M) · M2 · DXY — **FRED 키 설정 시** 활성
    - **BULL / BEAR / RANGE / TRANSITION** 국면 판정 — 내부 데이터로 가동 중
-   - 경제 캘린더(FOMC·CPI·고용) + 종목별 실적발표 D-7~D-day 라벨
-   - 이벤트 전후 `EVENT_RISK` 라벨로 신호 confidence 조정
+   - ✅ 경제 캘린더(FOMC·CPI·고용, keyless) + 종목별 실적발표 D-7~D-day 라벨 (R39, `/macro/calendar` + 사이드카 yfinance)
+   - ✅ 이벤트 전후 `EVENT_RISK` 라벨로 신호 confidence 조정 (R39, 신호 상세 `event_risk` 읽기 시점 힌트)
    - → *왜 1순위인가: 개별 신호를 볼 때마다 "지금 시장이 어떤 국면인지"를 매번 따로 확인하고 있다. 그게 자동화되면 판단 시간이 줄어든다.*
+   - *남은 보강: 경제 캘린더 고정일은 큐레이션 상수(연 1회 갱신) → 실 캘린더 API 연동, FRED 키 발급.*
 2. **사이드카를 별도 저장소로 분리** — 지금은 레거시 private 저장소 안에 있어서 백엔드만 클론하면 재현이 안 된다
 3. **실사용 마찰 제거** — 실제로 며칠 써보면서 걸리는 것부터 (알림 노이즈? 신호 과다? 차트 조작감?)
 4. ✅ **틱띄기 실시간화** (R38) — Upbit WS 수집기 구현. `vein.scalp.ws-enabled=true`로 활성(라이브 검증됨), 기본은 REST 폴백

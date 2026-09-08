@@ -85,9 +85,12 @@
 |---|---|---|
 | GET | `/macro` | 스냅샷: `regime`(항상) + `yield_curve`·`m2`·`dxy`(FRED 키 있을 때) + `sources[]` + `generated_at`. ~10분 캐시 |
 | GET | `/macro/regime` | 국면만: `{label(BULL\|BEAR\|RANGE\|TRANSITION), score, summary, signals[]{key,direction(BULLISH\|BEARISH\|NEUTRAL),detail}}` |
+| GET | `/macro/calendar` | 경제 캘린더(R39): `?days=1..90(기본 14)`. `{events[]{date(yyyy-mm-dd),dday,type(FOMC\|CPI\|EMPLOYMENT),title,region,impact}, generated_at}`. 오늘 근접(\|D-day\|) 순 정렬 |
 
 - **국면은 내부 데이터로 항상 판정** — 나스닥 지수 추세(최근 ~20p 모멘텀) + 공포탐욕(위험선호/회피). 두 신호의 방향 합산 점수로 라벨(±2 이상 BULL/BEAR, 혼재 TRANSITION, 그 외 RANGE).
 - **FRED 키(`FRED_API_KEY`) 설정 시** 금리차(DGS2/DGS3MO/DGS10 → 10Y-2Y·10Y-3M·역전여부), M2(M2SL, YoY), 달러인덱스(DTWEXBGS, 추세)를 보강하고 각각 국면 신호로 반영. 미설정 시 해당 블록 null·조용히 생략(사이드카 스텁-폴백과 동일).
+- **경제 캘린더(R39, keyless)** — FOMC·CPI 발표일은 **큐레이션 고정일 상수**, 고용보고서(NFP)는 **매월 첫째 금요일 규칙**으로 생성. 외부 키·호출 없음. 위험자산 전반에 영향하므로 코인 포함 전 시장 공통 라벨로 취급.
+- **신호 이벤트 리스크(R39)** — `GET /signals/{id}` 상세에 `event_risk`(nullable) 추가: `{active, level(HIGH\|MEDIUM), confidence_delta(음수 참고값), note, events[]{date,dday,type,title}}`. 매크로 이벤트(D-1~D+1 HIGH) + 주식 실적발표(D-7~D-day, 사이드카 yfinance `/equity/earnings` 경유·폴백 null). 저장 점수는 불변, **읽기 시점 힌트**로만 노출. 임박 이벤트 없으면 null.
 
 ## 9. 공개 콘텐츠 (비로그인) — `report`
 | Method | Path | 설명 |

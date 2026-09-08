@@ -195,6 +195,28 @@ public class EquitySidecarClient {
         }
     }
 
+    /**
+     * Next scheduled earnings date (ISO {@code yyyy-MM-dd}) for an equity symbol,
+     * via the sidecar {@code /equity/earnings} (yfinance). Returns null on any
+     * failure or when no upcoming date is known — callers treat null as "no event".
+     */
+    public String fetchNextEarnings(String market, String symbol) {
+        try {
+            JsonNode body = restClient.get()
+                    .uri(b -> b.path("/equity/earnings")
+                            .queryParam("market", market)
+                            .queryParam("symbol", symbol)
+                            .build())
+                    .retrieve()
+                    .body(JsonNode.class);
+            return body == null ? null : text(body, "next_earnings_date");
+        } catch (RuntimeException e) {
+            log.warn("equity sidecar earnings market={} symbol={} failed: {}",
+                    market, symbol, e.getMessage());
+            return null;
+        }
+    }
+
     private static String text(JsonNode n, String field) {
         JsonNode v = n.path(field);
         if (v.isMissingNode() || v.isNull()) {

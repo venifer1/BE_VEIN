@@ -44,4 +44,31 @@ public final class MacroDto {
     /** 달러인덱스 (FRED broad USD index). 코인·미주·원화자산 해석 보조. */
     public record DollarIndex(String value, String trend, String asOf) {
     }
+
+    /**
+     * 경제 캘린더의 고위험 매크로 이벤트 하나 (기획서 §15.1 후반부).
+     * {@code type} ∈ FOMC|CPI|EMPLOYMENT, {@code region} ∈ US|GLOBAL,
+     * {@code impact} ∈ HIGH|MEDIUM. {@code dday}는 오늘 기준 D±n(양수=예정, 0=당일, 음수=경과).
+     * FOMC·CPI는 큐레이션 고정일, 고용보고서(NFP)는 매월 첫째 금요일 규칙으로 생성한다.
+     */
+    public record EconomicEvent(String date, int dday, String type, String title,
+                                String region, String impact) {
+    }
+
+    /** {@code GET /api/v1/macro/calendar} body. 오늘 근접 순으로 정렬된 이벤트 목록. */
+    public record CalendarResponse(List<EconomicEvent> events, String generatedAt) {
+    }
+
+    /**
+     * 특정 신호/종목에 대한 이벤트 리스크 라벨. 이벤트 전후에는 변동성이 커져 패턴 신뢰도가
+     * 낮아지므로, 저장된 점수를 바꾸지 않고 <b>읽기 시점 힌트</b>로 노출한다.
+     * {@code level} ∈ HIGH|MEDIUM, {@code confidenceDelta}는 참고용 점수 가감(음수).
+     */
+    public record EventRisk(boolean active, String level, int confidenceDelta,
+                            String note, List<EventItem> events) {
+    }
+
+    /** EventRisk를 유발한 개별 이벤트. {@code dday}는 오늘 기준 D±n. */
+    public record EventItem(String date, int dday, String type, String title) {
+    }
 }
