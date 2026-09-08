@@ -60,6 +60,7 @@ public class OpsStatusController {
     private final FundingService fundingService;
     private final NewsService newsService;
     private final DerivativesService derivativesService;
+    private final SidecarHealth sidecarHealth;
 
     public OpsStatusController(IngestionRunRepository ingestionRunRepository,
                               MarketIndexService marketIndexService,
@@ -67,7 +68,8 @@ public class OpsStatusController {
                               TvlService tvlService,
                               FundingService fundingService,
                               NewsService newsService,
-                              DerivativesService derivativesService) {
+                              DerivativesService derivativesService,
+                              SidecarHealth sidecarHealth) {
         this.ingestionRunRepository = ingestionRunRepository;
         this.marketIndexService = marketIndexService;
         this.kimchiPremiumService = kimchiPremiumService;
@@ -75,22 +77,32 @@ public class OpsStatusController {
         this.fundingService = fundingService;
         this.newsService = newsService;
         this.derivativesService = derivativesService;
+        this.sidecarHealth = sidecarHealth;
     }
 
-    public record ProviderStatus(String provider, String freshness, String lastRunAt) {
+    /** Sidecar-backed providers that silently fall back to a SYNTHETIC stub when the sidecar is down. */
+    private static final List<String> SIDECAR_BACKED = List.of("yfinance", "pykrx", "telegram");
+
+    /** {@code source} ∈ REAL|STUB: STUB means this provider is currently serving synthetic fallback. */
+    public record ProviderStatus(String provider, String freshness, String source, String lastRunAt) {
     }
 
     public record ScannerStatus(String status, String lastRunAt) {
     }
 
+    /** Live sidecar reachability so the UI can flag synthetic-stub fallback. */
+    public record SidecarStatus(boolean healthy, String url) {
+    }
+
     public record SystemStatusDto(String buildVersion, String time, List<ProviderStatus> providers,
-                                  ScannerStatus scanner) {
+                                  ScannerStatus scanner, SidecarStatus sidecar) {
     }
 
     @GetMapping("/status")
     @Operation(summary = "System status (public)")
     public ApiResponse<SystemStatusDto> status() {
         Instant now = Instant.now();
+        boolean sidecarUp = sidecarHealth.healthy();
         List<ProviderStatus> providers = new ArrayList<>();
         ScannerStatus scanner = new ScannerStatus("UNKNOWN", null);
 
@@ -127,7 +139,7 @@ public class OpsStatusController {
                 } else if ("upbit".equals(p)) {
                     lastAt = mostRecent(lastAt, mostRecent(indicesAt, kimchiAt));
                 }
-                providers.add(providerStatus(p, lastAt, now));
+                providers.add(providerStatus(p, lastAt, now, sourceOf(p, sidecarUp)));
             }
             // Phase-3 aux providers: real freshness from their snapshot/last-poll times.
             Instant defillamaAt = safe(tvlService::lastCollectedAt);
@@ -135,11 +147,11 @@ public class OpsStatusController {
             Instant telegramAt = safe(() -> newsService.lastCollectedAt("TELEGRAM"));
             Instant bloombergAt = safe(() -> newsService.lastCollectedAt("BLOOMBERG"));
             Instant derivativesAt = safe(derivativesService::lastCollectedAt);
-            providers.add(auxStatus("defillama", defillamaAt, now));
-            providers.add(auxStatus("bybit", bybitAt, now));
-            providers.add(auxStatus("telegram", telegramAt, now));
-            providers.add(auxStatus("bloomberg", bloombergAt, now));
-            providers.add(auxStatus("binance_futures", derivativesAt, now));
+            providers.add(auxStatus("defillama", defillamaAt, now, sourceOf("defillama", sidecarUp)));
+            providers.add(auxStatus("bybit", bybitAt, now, sourceOf("bybit", sidecarUp)));
+            providers.add(auxStatus("telegram", telegramAt, now, sourceOf("telegram", sidecarUp)));
+            providers.add(auxStatus("bloomberg", bloombergAt, now, sourceOf("bloomberg", sidecarUp)));
+            providers.add(auxStatus("binance_futures", derivativesAt, now, sourceOf("binance_futures", sidecarUp)));
 
             if (latestOverall != null) {
                 String runStatus = latestOverall.getStatus() != null ? latestOverall.getStatus() : "UNKNOWN";
@@ -147,38 +159,45 @@ public class OpsStatusController {
             }
         } catch (RuntimeException e) {
             log.warn("Failed to derive system status; returning placeholders", e);
+            providers.clear();
             for (String p : PHASE1_PROVIDERS) {
-                providers.add(new ProviderStatus(p, "UNKNOWN", null));
+                providers.add(new ProviderStatus(p, "UNKNOWN", sourceOf(p, sidecarUp), null));
             }
             for (String p : PHASE3_PROVIDERS) {
-                providers.add(new ProviderStatus(p, "UNKNOWN", null));
+                providers.add(new ProviderStatus(p, "UNKNOWN", sourceOf(p, sidecarUp), null));
             }
         }
 
-        return ApiResponse.of(new SystemStatusDto(BUILD_VERSION, TimeUtil.toIso(now), providers, scanner));
+        SidecarStatus sidecar = new SidecarStatus(sidecarUp, sidecarHealth.url());
+        return ApiResponse.of(new SystemStatusDto(BUILD_VERSION, TimeUtil.toIso(now), providers, scanner, sidecar));
     }
 
-    private static ProviderStatus providerStatus(String provider, Instant lastAt, Instant now) {
+    /** REAL, unless a sidecar-backed provider is serving synthetic stub because the sidecar is down. */
+    private static String sourceOf(String provider, boolean sidecarUp) {
+        return (SIDECAR_BACKED.contains(provider) && !sidecarUp) ? "STUB" : "REAL";
+    }
+
+    private static ProviderStatus providerStatus(String provider, Instant lastAt, Instant now, String source) {
         if (lastAt == null) {
-            return new ProviderStatus(provider, "UNKNOWN", null);
+            return new ProviderStatus(provider, "UNKNOWN", source, null);
         }
         // yfinance/pykrx are stubbed: they only have data once a backfill ran.
         Duration window = (provider.equals("yfinance") || provider.equals("pykrx"))
                 ? FRESH_WINDOW : TERMINAL_FRESH_WINDOW;
         // Candle pollers (upbit candles) use the hourly window; pick the looser one.
         if (Duration.between(lastAt, now).compareTo(window.compareTo(FRESH_WINDOW) > 0 ? window : FRESH_WINDOW) <= 0) {
-            return new ProviderStatus(provider, "FRESH", TimeUtil.toIso(lastAt));
+            return new ProviderStatus(provider, "FRESH", source, TimeUtil.toIso(lastAt));
         }
-        return new ProviderStatus(provider, "DELAYED", TimeUtil.toIso(lastAt));
+        return new ProviderStatus(provider, "DELAYED", source, TimeUtil.toIso(lastAt));
     }
 
     /** Freshness for a Phase-3 aux provider using the longer aux window. */
-    private static ProviderStatus auxStatus(String provider, Instant lastAt, Instant now) {
+    private static ProviderStatus auxStatus(String provider, Instant lastAt, Instant now, String source) {
         if (lastAt == null) {
-            return new ProviderStatus(provider, "UNKNOWN", null);
+            return new ProviderStatus(provider, "UNKNOWN", source, null);
         }
         boolean fresh = Duration.between(lastAt, now).compareTo(AUX_FRESH_WINDOW) <= 0;
-        return new ProviderStatus(provider, fresh ? "FRESH" : "DELAYED", TimeUtil.toIso(lastAt));
+        return new ProviderStatus(provider, fresh ? "FRESH" : "DELAYED", source, TimeUtil.toIso(lastAt));
     }
 
     private static Instant mostRecent(Instant a, Instant b) {

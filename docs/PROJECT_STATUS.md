@@ -62,7 +62,7 @@
 | **BE_VEIN** | Spring Boot 3.3 · Java 21 · PostgreSQL 16 · Redis 7 · Flyway | Java 21,101줄 · 25 컨트롤러 · **약 72개 엔드포인트** · 마이그레이션 V1~V22 | 실동작 |
 | **FE_VEIN** | Next.js 14 App Router · TS · Tailwind/shadcn · lightweight-charts · TanStack Query | TS 12,057줄 · 14 라우트 · **약 55개 엔드포인트 사용** | 실동작 |
 | **APP_VEIN** | Flutter (Dart 3) · riverpod · go_router · dio · fl_chart | Dart 7,614줄 · 12 라우트 · **22개 엔드포인트 사용** | **크게 지연** |
-| **사이드카** | Python · yfinance · pykrx · telethon · Upbit WS | — | **레거시 private 저장소 안에 위치** (`veni_invest_abc/sidecar/`) |
+| **사이드카** | Python · yfinance · pykrx · telethon · Upbit WS | — | **SIDECAR_VEIN 별도 저장소로 분리**(`requirements.txt`로 standalone 실행 가능). 실행은 레거시 venv도 허용 |
 
 ### 2.2 구현 완료 (코드로 확인됨)
 
@@ -107,6 +107,7 @@
 | R37 | **거시경제/시장국면 엔진** (Track A #1) — `com.vein.macro`: 국면(BULL/BEAR/RANGE/TRANSITION) 내부 데이터로 판정 + FRED 선택 보강(금리차·M2·DXY) + `GET /macro[/regime]` + 홈 국면 배너 |
 | R38 | **틱띄기 실시간화** (Track A #4) — `WebSocketScalpCollector`: Upbit WS(orderbook+trade) 지속 연결로 TPS/micro-vol 정확 산출, `ws-enabled` 시 @Primary로 REST 폴러 대체 |
 | R39 | **경제 캘린더 + 실적발표 D-day + EVENT_RISK** (Track A #1 완결) — `com.vein.macro`: keyless 경제 캘린더(FOMC/CPI 고정일 + NFP 규칙) `GET /macro/calendar`, 실적발표일(사이드카 yfinance `/equity/earnings`, 폴백), 신호 상세 `event_risk` 라벨(읽기 시점 confidence 힌트) + 홈 캘린더/신호 배지 |
+| R40 | **데이터 출처 가시화 + 사이드카 재현성 마감** (Track A #2·B #3) — `/system/status`에 provider별 `source`(REAL/STUB) + `sidecar{healthy,url}` 추가(`SidecarHealth` 30s 캐시). 사이드카 다운 시 yfinance/pykrx/telegram=STUB. FE 설정 "데이터 출처"에 실데이터/합성 배지 + 스텁 경고 배너. 사이드카 README standalone venv 우선으로 개정 |
 
 ---
 
@@ -144,8 +145,8 @@
    - ✅ 이벤트 전후 `EVENT_RISK` 라벨로 신호 confidence 조정 (R39, 신호 상세 `event_risk` 읽기 시점 힌트)
    - → *왜 1순위인가: 개별 신호를 볼 때마다 "지금 시장이 어떤 국면인지"를 매번 따로 확인하고 있다. 그게 자동화되면 판단 시간이 줄어든다.*
    - *남은 보강: 경제 캘린더 고정일은 큐레이션 상수(연 1회 갱신) → 실 캘린더 API 연동, FRED 키 발급.*
-2. **사이드카를 별도 저장소로 분리** — 지금은 레거시 private 저장소 안에 있어서 백엔드만 클론하면 재현이 안 된다
-3. **실사용 마찰 제거** — 실제로 며칠 써보면서 걸리는 것부터 (알림 노이즈? 신호 과다? 차트 조작감?)
+2. ✅ **사이드카를 별도 저장소로 분리** — SIDECAR_VEIN 저장소 + `requirements.txt`로 standalone 실행 가능(R40에서 README를 독립 venv 우선으로 마감). 남은 것: 배포 자동화는 아직 수동
+3. **실사용 마찰 제거** — 실제로 며칠 써보면서 걸리는 것부터 (알림 노이즈? 신호 과다? 차트 조작감?). ✅ 1차: 스텁 폴백 가시화(R40) — 이제 `/system/status`+설정에서 합성 데이터를 구분
 4. ✅ **틱띄기 실시간화** (R38) — Upbit WS 수집기 구현. `vein.scalp.ws-enabled=true`로 활성(라이브 검증됨), 기본은 REST 폴백
 
 ### Track B — 남에게 보여주려면
@@ -257,7 +258,8 @@
 
 - ⚠️ **사이드카 의존**: 미국·한국 주식, 텔레그램 속보, 틱띄기는 Python 사이드카 경유.
   사이드카가 죽으면 **에러 없이 합성 스텁으로 폴백**한다 → 가짜 데이터를 진짜로 착각할 수 있음.
-  `/system/status`로 provider별 freshness를 확인할 것.
+  **R40부터 `/system/status`가 provider별 `source`(REAL/STUB) + `sidecar.healthy`를 반환**하고,
+  설정 화면 "데이터 출처"에 실데이터/합성 배지 + 스텁 경고 배너를 띄운다 → 스텁 여부를 눈으로 확인 가능.
 - ⚠️ **DB 비밀번호**: R33에서 회전됨. 기존 postgres 볼륨은 옛 비밀번호이므로
   `ALTER USER vein PASSWORD '<새 값>'` 로 맞춰야 기동됨
   (`docker compose down -v`는 캔들 24만 건 소실).

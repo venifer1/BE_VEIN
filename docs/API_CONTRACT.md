@@ -78,7 +78,9 @@
 | GET `/notifications?unread_only&cursor` | PATCH `/notifications/{id}/read` · POST `/notifications/{id}/deliveries/web-push` (브라우저 표시 성공 멱등 확인) |
 
 ## 8. 시스템 — `ops`
-| GET `/system/status` | provider별 freshness(upbit/binance/coingecko/defillama/yfinance/pykrx/bybit/telegram/bloomberg), scanner status, build version |
+| GET `/system/status` | `providers[]{provider, freshness(FRESH\|DELAYED\|UNKNOWN), source(REAL\|STUB), last_run_at}` + `scanner_status` + `build_version` + `sidecar{healthy,url}`. provider: upbit/binance/coingecko/defillama/yfinance/pykrx/bybit/telegram/bloomberg/binance_futures |
+
+- **`source`(R40)** — `STUB`이면 그 provider가 현재 **합성 스텁 폴백** 중(실데이터 아님). 사이드카 경유 provider(yfinance·pykrx·telegram)는 `sidecar.healthy=false`일 때 STUB, keyless 직결 provider는 항상 REAL. FE 설정 "데이터 출처"에 실데이터/합성 배지 + 스텁 경고로 노출. `SidecarHealth`가 30s 캐시.
 
 ## 8-1. 거시경제 / 시장국면 — `macro` (§15.1·§39)
 | Method | Path | 설명 |
