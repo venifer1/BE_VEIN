@@ -54,6 +54,20 @@ public interface PatternSignalRepository extends JpaRepository<PatternSignal, Lo
                                  Pageable pageable);
 
     /**
+     * Top fresh signals by Pattern Score (R41, 신호 과다 완화). Only actionable
+     * statuses (DETECTED / NEAR_COMPLETION) with a non-null score, optionally scoped
+     * by market, highest score first (ties broken newest-first). Limit via Pageable.
+     */
+    @Query("""
+            select s from PatternSignal s
+            where s.status in (com.vein.signal.SignalStatus.DETECTED, com.vein.signal.SignalStatus.NEAR_COMPLETION)
+              and s.score is not null
+              and (:market is null or s.market = :market)
+            order by s.score desc, s.detectedAt desc, s.id desc
+            """)
+    List<PatternSignal> findTopByScore(@Param("market") String market, Pageable pageable);
+
+    /**
      * Backtest universe (기획서 §11): signals of a given type, optionally scoped by
      * market/timeframe, detected at/after {@code since}, oldest-first so trades replay
      * in chronological order. {@code since} is required (non-null) so no Instant cast

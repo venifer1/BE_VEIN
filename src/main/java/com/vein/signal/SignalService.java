@@ -109,6 +109,21 @@ public class SignalService {
         return new SignalListResult(items, nextCursor);
     }
 
+    /**
+     * Top fresh signals by Pattern Score (R41). Curates the highest-quality
+     * actionable candidates so the user doesn't hunt through the full feed.
+     */
+    public List<SignalDto> top(String market, int limit) {
+        String marketFilter = (market == null || market.isBlank()) ? null : market.toUpperCase();
+        int size = Math.max(1, Math.min(limit, 30));
+        List<PatternSignal> rows = signalRepository.findTopByScore(
+                marketFilter, Pageable.ofSize(size));
+        List<Long> instrumentIds = rows.stream().map(PatternSignal::getInstrumentId).distinct().toList();
+        Map<Long, Instrument> instruments = instrumentRepository.findAllById(instrumentIds).stream()
+                .collect(Collectors.toMap(Instrument::getId, Function.identity()));
+        return rows.stream().map(s -> toDto(s, instruments)).toList();
+    }
+
     public SignalDetailDto detail(Long id) {
         PatternSignal signal = signalRepository.findById(id)
                 .orElseThrow(() -> new ApiException(ErrorCode.SIGNAL_NOT_FOUND,

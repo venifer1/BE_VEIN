@@ -108,6 +108,7 @@
 | R38 | **틱띄기 실시간화** (Track A #4) — `WebSocketScalpCollector`: Upbit WS(orderbook+trade) 지속 연결로 TPS/micro-vol 정확 산출, `ws-enabled` 시 @Primary로 REST 폴러 대체 |
 | R39 | **경제 캘린더 + 실적발표 D-day + EVENT_RISK** (Track A #1 완결) — `com.vein.macro`: keyless 경제 캘린더(FOMC/CPI 고정일 + NFP 규칙) `GET /macro/calendar`, 실적발표일(사이드카 yfinance `/equity/earnings`, 폴백), 신호 상세 `event_risk` 라벨(읽기 시점 confidence 힌트) + 홈 캘린더/신호 배지 |
 | R40 | **데이터 출처 가시화 + 사이드카 재현성 마감** (Track A #2·B #3) — `/system/status`에 provider별 `source`(REAL/STUB) + `sidecar{healthy,url}` 추가(`SidecarHealth` 30s 캐시). 사이드카 다운 시 yfinance/pykrx/telegram=STUB. FE 설정 "데이터 출처"에 실데이터/합성 배지 + 스텁 경고 배너. 사이드카 README standalone venv 우선으로 개정 |
+| R41 | **오늘의 주목 신호** (Track A #3, 신호 과다 완화) — `GET /signals/top?market=&limit=`(활성 신호 Pattern Score 상위), 홈 "오늘의 주목 신호" 섹션(시장 탭 + 상위 6 카드). 400여 신호를 뒤지지 않고 후보를 먼저 노출 |
 
 ---
 
@@ -146,7 +147,7 @@
    - → *왜 1순위인가: 개별 신호를 볼 때마다 "지금 시장이 어떤 국면인지"를 매번 따로 확인하고 있다. 그게 자동화되면 판단 시간이 줄어든다.*
    - *남은 보강: 경제 캘린더 고정일은 큐레이션 상수(연 1회 갱신) → 실 캘린더 API 연동, FRED 키 발급.*
 2. ✅ **사이드카를 별도 저장소로 분리** — SIDECAR_VEIN 저장소 + `requirements.txt`로 standalone 실행 가능(R40에서 README를 독립 venv 우선으로 마감). 남은 것: 배포 자동화는 아직 수동
-3. **실사용 마찰 제거** — 실제로 며칠 써보면서 걸리는 것부터 (알림 노이즈? 신호 과다? 차트 조작감?). ✅ 1차: 스텁 폴백 가시화(R40) — 이제 `/system/status`+설정에서 합성 데이터를 구분
+3. **실사용 마찰 제거** — 실제로 며칠 써보면서 걸리는 것부터 (알림 노이즈? 신호 과다? 차트 조작감?). ✅ 스텁 폴백 가시화(R40), ✅ 신호 과다 → 홈 "오늘의 주목 신호" 상위 큐레이션(R41). 남은 것: 알림 노이즈(요약/조용한시간), 차트 조작감
 4. ✅ **틱띄기 실시간화** (R38) — Upbit WS 수집기 구현. `vein.scalp.ws-enabled=true`로 활성(라이브 검증됨), 기본은 REST 폴백
 
 ### Track B — 남에게 보여주려면

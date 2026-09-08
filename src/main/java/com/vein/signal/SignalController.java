@@ -65,6 +65,17 @@ public class SignalController {
         return ApiResponse.list(result.items(), result.nextCursor());
     }
 
+    @GetMapping("/top")
+    @Operation(summary = "Top signals by Pattern Score",
+            description = "신호 과다 완화(R41): 활성 상태(DETECTED/NEAR_COMPLETION) 신호 중 "
+                    + "Pattern Score 상위 N개를 반환. market으로 시장 스코핑, limit 기본 10·최대 30. "
+                    + "홈 \"오늘의 주목 신호\"에 사용.")
+    public ApiResponse<List<SignalDto>> top(
+            @RequestParam(value = "market", required = false) String market,
+            @RequestParam(value = "limit", required = false, defaultValue = "10") int limit) {
+        return ApiResponse.of(signalService.top(market, limit));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get signal detail",
             description = "Returns evidence and invalidation for a single signal.")

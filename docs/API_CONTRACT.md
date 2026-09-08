@@ -50,7 +50,8 @@
 | Method | Path | 설명 |
 |---|---|---|
 | GET | `/signals` | `?type=ABC\|TOP\|IMALOL & market & timeframe & instrument_id & watchlist_only & status & near_only & cursor`. 카드: type, market, instrument, timeframe, status, score, current_price, **c_target(ABC/TOP)**, pivots 요약(0/A/B 일자), detected_at, freshness |
-| GET | `/signals/{id}` | evidence(피벗/추세선/볼린저/매치박스), invalidation, c_target, chart_range, algorithm_version |
+| GET | `/signals/top` | 오늘의 주목 신호(R41): `?market=&limit=`(기본 10·최대 30). 활성 신호(DETECTED/NEAR_COMPLETION) Pattern Score 상위. 카드 형식은 `/signals`와 동일 |
+| GET | `/signals/{id}` | evidence(피벗/추세선/볼린저/매치박스), invalidation, c_target, chart_range, algorithm_version, **event_risk(R39, nullable)** |
 | GET | `/signals/{id}/explain` | Pattern Score(완성도30·거래량20·추세20·변동성10·뉴스20), 규칙 기반 근거·위험·다음 확인, Risk Guard(PASS/WARN/BLOCK), 1d 성과 표본 기반 Confidence |
 | GET/POST | `/explain/{signalId}/feedback` | Explain 유용성 집계·내 평가 조회 / `{helpful,reason?}` 사용자별 평가 upsert. reason=`UNCLEAR|INACCURATE|MISSING_RISK|TOO_COMPLEX|OTHER` |
 | GET | `/scalp/ranking` | 틱띄기: `?limit=` 업비트 24h 거래대금 상위 마켓 스캘핑 점수 랭킹(symbol, scalp_score, spread_ticks, tps, micro_vol, ob_imbalance, wall_state). 서버 WS 수집값 폴링 |
