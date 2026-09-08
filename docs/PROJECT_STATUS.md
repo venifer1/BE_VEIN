@@ -59,7 +59,7 @@
 
 | 저장소 | 스택 | 규모 | 상태 |
 |---|---|---|---|
-| **BE_VEIN** | Spring Boot 3.3 · Java 21 · PostgreSQL 16 · Redis 7 · Flyway | Java 21,101줄 · 25 컨트롤러 · **약 72개 엔드포인트** · 마이그레이션 V1~V22 | 실동작 |
+| **BE_VEIN** | Spring Boot 3.3 · Java 21 · PostgreSQL 16 · Redis 7 · Flyway | Java · 28 컨트롤러 · **약 78개 엔드포인트** · 마이그레이션 V1~V24 | 실동작 |
 | **FE_VEIN** | Next.js 14 App Router · TS · Tailwind/shadcn · lightweight-charts · TanStack Query | TS 12,057줄 · 14 라우트 · **약 55개 엔드포인트 사용** | 실동작 |
 | **APP_VEIN** | Flutter (Dart 3) · riverpod · go_router · dio · fl_chart | Dart 7,614줄 · 12 라우트 · **22개 엔드포인트 사용** | **크게 지연** |
 | **사이드카** | Python · yfinance · pykrx · telethon · Upbit WS | — | **SIDECAR_VEIN 별도 저장소로 분리**(`requirements.txt`로 standalone 실행 가능). 실행은 레거시 venv도 허용 |
@@ -109,6 +109,7 @@
 | R39 | **경제 캘린더 + 실적발표 D-day + EVENT_RISK** (Track A #1 완결) — `com.vein.macro`: keyless 경제 캘린더(FOMC/CPI 고정일 + NFP 규칙) `GET /macro/calendar`, 실적발표일(사이드카 yfinance `/equity/earnings`, 폴백), 신호 상세 `event_risk` 라벨(읽기 시점 confidence 힌트) + 홈 캘린더/신호 배지 |
 | R40 | **데이터 출처 가시화 + 사이드카 재현성 마감** (Track A #2·B #3) — `/system/status`에 provider별 `source`(REAL/STUB) + `sidecar{healthy,url}` 추가(`SidecarHealth` 30s 캐시). 사이드카 다운 시 yfinance/pykrx/telegram=STUB. FE 설정 "데이터 출처"에 실데이터/합성 배지 + 스텁 경고 배너. 사이드카 README standalone venv 우선으로 개정 |
 | R41 | **오늘의 주목 신호** (Track A #3, 신호 과다 완화) — `GET /signals/top?market=&limit=`(활성 신호 Pattern Score 상위), 홈 "오늘의 주목 신호" 섹션(시장 탭 + 상위 6 카드). 400여 신호를 뒤지지 않고 후보를 먼저 노출 |
+| R42 | **조용한 시간(Quiet Hours)** (Track A #3, 알림 노이즈 완화) — V24 `notification_prefs`, `GET/PUT /me/notification-prefs`, 지정 KST 시간대(자정 넘김 지원) 동안 새 알림 생성 스킵(쿨다운 미진전). 설정 "조용한 시간" 카드 |
 
 ---
 
@@ -147,7 +148,7 @@
    - → *왜 1순위인가: 개별 신호를 볼 때마다 "지금 시장이 어떤 국면인지"를 매번 따로 확인하고 있다. 그게 자동화되면 판단 시간이 줄어든다.*
    - *남은 보강: 경제 캘린더 고정일은 큐레이션 상수(연 1회 갱신) → 실 캘린더 API 연동, FRED 키 발급.*
 2. ✅ **사이드카를 별도 저장소로 분리** — SIDECAR_VEIN 저장소 + `requirements.txt`로 standalone 실행 가능(R40에서 README를 독립 venv 우선으로 마감). 남은 것: 배포 자동화는 아직 수동
-3. **실사용 마찰 제거** — 실제로 며칠 써보면서 걸리는 것부터 (알림 노이즈? 신호 과다? 차트 조작감?). ✅ 스텁 폴백 가시화(R40), ✅ 신호 과다 → 홈 "오늘의 주목 신호" 상위 큐레이션(R41). 남은 것: 알림 노이즈(요약/조용한시간), 차트 조작감
+3. **실사용 마찰 제거** — 실제로 며칠 써보면서 걸리는 것부터 (알림 노이즈? 신호 과다? 차트 조작감?). ✅ 스텁 폴백 가시화(R40), ✅ 신호 과다 → 홈 "오늘의 주목 신호" 상위 큐레이션(R41), ✅ 알림 노이즈 → 조용한 시간(R42). 남은 것: 차트 조작감, 알림 요약/스풀링
 4. ✅ **틱띄기 실시간화** (R38) — Upbit WS 수집기 구현. `vein.scalp.ws-enabled=true`로 활성(라이브 검증됨), 기본은 REST 폴백
 
 ### Track B — 남에게 보여주려면

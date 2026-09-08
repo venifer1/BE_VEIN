@@ -77,6 +77,7 @@
 ## 7. 알림 — `alert`/`notification` (패턴 3종 + 가격 지원)
 | GET `/alerts` (목록) | POST `/alerts` `{instrument_id, signal_type(ABC/TOP/IMALOL), timeframe, market, cooldown_sec}` | PATCH `/alerts/{id}` `{enabled,cooldown_sec}` |
 | GET `/notifications?unread_only&cursor` | PATCH `/notifications/{id}/read` · POST `/notifications/{id}/deliveries/web-push` (브라우저 표시 성공 멱등 확인) |
+| GET/PUT `/me/notification-prefs` | 조용한 시간(R42): `{quiet_enabled, quiet_start_hour, quiet_end_hour}`(KST 0-23). 창 동안 새 알림 생성 스킵(쿨다운 미진전). start>end면 자정 넘김, start==end면 창 없음 |
 
 ## 8. 시스템 — `ops`
 | GET `/system/status` | `providers[]{provider, freshness(FRESH\|DELAYED\|UNKNOWN), source(REAL\|STUB), last_run_at}` + `scanner_status` + `build_version` + `sidecar{healthy,url}`. provider: upbit/binance/coingecko/defillama/yfinance/pykrx/bybit/telegram/bloomberg/binance_futures |

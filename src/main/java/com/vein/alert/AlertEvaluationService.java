@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.vein.instrument.Instrument;
 import com.vein.instrument.InstrumentRepository;
 import com.vein.notification.Notification;
+import com.vein.notification.NotificationPrefService;
 import com.vein.notification.NotificationService;
 import com.vein.signal.PatternSignal;
 import com.vein.signal.PatternSignalRepository;
@@ -27,15 +28,18 @@ public class AlertEvaluationService {
     private final NotificationService notificationService;
     private final InstrumentRepository instrumentRepository;
     private final PatternSignalRepository patternSignalRepository;
+    private final NotificationPrefService notificationPrefService;
 
     public AlertEvaluationService(AlertRepository alertRepository,
                                   NotificationService notificationService,
                                   InstrumentRepository instrumentRepository,
-                                  PatternSignalRepository patternSignalRepository) {
+                                  PatternSignalRepository patternSignalRepository,
+                                  NotificationPrefService notificationPrefService) {
         this.alertRepository = alertRepository;
         this.notificationService = notificationService;
         this.instrumentRepository = instrumentRepository;
         this.patternSignalRepository = patternSignalRepository;
+        this.notificationPrefService = notificationPrefService;
     }
 
     /** Main entrypoint: invoked when a new signal is detected. */
@@ -58,6 +62,11 @@ public class AlertEvaluationService {
 
         for (Alert alert : alerts) {
             if (alert.inCooldown(now)) {
+                continue;
+            }
+            // 조용한 시간(R42): 이 창에는 새 알림을 만들지 않는다. 쿨다운도 진전시키지 않아
+            // 창이 끝난 뒤 후속 신호가 정상적으로 알림을 낸다.
+            if (notificationPrefService.isQuietNow(alert.getUserId(), now)) {
                 continue;
             }
             Notification created = notificationService.createInApp(
