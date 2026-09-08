@@ -16,7 +16,8 @@ import com.vein.pattern.core.PivotDetector;
  * <ol>
  *   <li>0 (peak): prominence vs prior {@code win}-average &ge; (1 + MIN_0_PROMINENCE).</li>
  *   <li>A (trough, after 0): drop_pct = (0 - A)/|0| &ge; MIN_A_DROP_PCT; if STRICT_WAVE,
- *       no high between 0 and A exceeds the 0 value.</li>
+ *       no high between 0 and A exceeds the 0 value AND no low between 0 and A dips below A
+ *       (the down-leg must bottom at A — else a shallow secondary trough could be picked as A).</li>
  *   <li>B (peak, after A): retrace = (B - A)/(0 - A) in [MIN_B_RETRACE_PCT, MAX_B_RETRACE_PCT];
  *       B &lt; 0 held; no low between A and B breaks below A; no later high after A exceeds B.</li>
  *   <li>C target c_100 = B - (0 - A).</li>
@@ -30,7 +31,7 @@ import com.vein.pattern.core.PivotDetector;
  */
 public class AbcDetector {
 
-    public static final String ALGORITHM_VERSION = "abc-java-1.0.1";
+    public static final String ALGORITHM_VERSION = "abc-java-1.0.2";
     public static final String RULE_ID = "ABC";
     public static final String INVALIDATION_RULE = "A_LOW_BREAK";
 
@@ -79,8 +80,16 @@ public class AbcDetector {
                 if (dropPct < params.minADropPct()) {
                     continue;
                 }
-                if (params.strictWave() && breaksAbove(highs, zero, a, zeroVal)) {
-                    continue; // 0 not breached between 0 and A
+                if (params.strictWave()) {
+                    if (breaksAbove(highs, zero, a, zeroVal)) {
+                        continue; // 0 not breached between 0 and A
+                    }
+                    if (breaksBelow(lows, zero, a, aVal)) {
+                        // 0→A 하락 레그는 A에서 바닥이어야 한다 — A보다 낮은 저점이 그 앞에
+                        // 있으면 A는 진짜 파동 바닥이 아니다. 평탄부의 얕은 2차 저점이 잘못 A로
+                        // 뽑혀, 최근-B dedup이 올바른 파동을 밀어내던 버그를 막는다.
+                        continue;
+                    }
                 }
                 for (int b : peaks) {
                     if (b <= a) {
