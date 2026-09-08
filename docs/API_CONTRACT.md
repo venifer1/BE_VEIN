@@ -9,6 +9,7 @@
 - 목록 cursor 기반 최신순, `page_size` 기본 20·최대 100.
 - 성공 `{data, meta:{trace_id, freshness, next_cursor?}}`, 오류 `{error:{code,message,trace_id,field_errors}}`.
 - `freshness`: `FRESH | DELAYED` (collected_at 경과 > timeframe×2 → DELAYED).
+- **클라이언트 오류는 4xx로 정규화(R43)**: 잘못된 파라미터 타입/enum·누락 파라미터·바디 검증 실패·깨진 JSON → `400 VALIDATION_ERROR`(+field_errors), 잘못된 메서드 → `405 METHOD_NOT_ALLOWED`. 500은 실제 서버 오류에만.
 
 ## enum (확장)
 - **market**: `CRYPTO | US | KOSPI | KOSDAQ`

@@ -110,6 +110,7 @@
 | R40 | **데이터 출처 가시화 + 사이드카 재현성 마감** (Track A #2·B #3) — `/system/status`에 provider별 `source`(REAL/STUB) + `sidecar{healthy,url}` 추가(`SidecarHealth` 30s 캐시). 사이드카 다운 시 yfinance/pykrx/telegram=STUB. FE 설정 "데이터 출처"에 실데이터/합성 배지 + 스텁 경고 배너. 사이드카 README standalone venv 우선으로 개정 |
 | R41 | **오늘의 주목 신호** (Track A #3, 신호 과다 완화) — `GET /signals/top?market=&limit=`(활성 신호 Pattern Score 상위), 홈 "오늘의 주목 신호" 섹션(시장 탭 + 상위 6 카드). 400여 신호를 뒤지지 않고 후보를 먼저 노출 |
 | R42 | **조용한 시간(Quiet Hours)** (Track A #3, 알림 노이즈 완화) — V24 `notification_prefs`, `GET/PUT /me/notification-prefs`, 지정 KST 시간대(자정 넘김 지원) 동안 새 알림 생성 스킵(쿨다운 미진전). 설정 "조용한 시간" 카드 |
+| R43 | **견고성: 잘못된 요청 4xx 정규화** (Track B #4) — `GlobalExceptionHandler`가 나쁜 파라미터/enum·누락 파라미터·깨진 JSON·잘못된 메서드를 500이 아닌 **400/405 + 에러 봉투**로 매핑. `ErrorCode.METHOD_NOT_ALLOWED`. 조용한 시간 값 0-23 검증. (소유권/IDOR은 이미 견고함을 감사로 확인). ⚠ 별개로 `AbcDetectorTest` 1건 선행 실패 발견 — 미수정 |
 
 ---
 
@@ -280,6 +281,10 @@
 - ⚠️ **Flyway V5 주석**: 옛 시드 비밀번호가 주석에 남아 있으나 V22로 무효화된 **죽은 참조**.
   V5를 수정하면 checksum이 깨져 기동 실패하므로 손대지 말 것.
 - pykrx KRX 인덱스 구성종목 API가 자주 다운 → 코스피/코스닥 구성종목은 프리셋/캐시 폴백.
+- ⚠️ **선행 실패 테스트(R43 발견)**: `AbcDetectorTest.allowsShortABWhenBIsHighestAfterA()` 1건 실패
+  (전체 37 중 1, ASCII 경로 실행 기준). `patterns` 크기는 1이나 `idxA` 기대값(4) 불일치. ABC
+  탐지기 로직/기대값 드리프트로 보이며, 파라미터는 레거시 포팅(사용자 튜닝 영역)이라 **미수정**.
+  탐지기가 맞는지 테스트가 맞는지 판단 후 정리 필요.
 
 ---
 

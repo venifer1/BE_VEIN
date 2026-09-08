@@ -11,6 +11,7 @@ import com.vein.common.ApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 /**
  * 내 알림 환경설정 (R42). 조용한 시간(Quiet Hours) 조회/수정. 인증 필요.
@@ -36,7 +37,7 @@ public class NotificationPrefController {
     @PutMapping
     @Operation(summary = "내 알림 환경설정 수정",
             description = "조용한 시간 창 동안엔 새 알림을 만들지 않아 노이즈를 줄인다. 시각은 KST 시(0-23).")
-    public ApiResponse<NotificationPrefDto> update(@RequestBody NotificationPrefDto req) {
+    public ApiResponse<NotificationPrefDto> update(@Valid @RequestBody NotificationPrefDto req) {
         NotificationPref saved = service.update(
                 currentUserId(), req.quietEnabled(), req.quietStartHour(), req.quietEndHour());
         return ApiResponse.of(NotificationPrefDto.from(saved));

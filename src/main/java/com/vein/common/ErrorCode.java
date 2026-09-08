@@ -50,7 +50,8 @@ public enum ErrorCode {
 
     // Generic
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal error"),
-    VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "Validation error");
+    VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "Validation error"),
+    METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "Method not allowed");
 
     private final HttpStatus status;
     private final String defaultMessage;
