@@ -50,7 +50,7 @@
 ## 4. 스캐너 (패턴 3종 통합) — `signal`/`scanner`/`scalp`
 | Method | Path | 설명 |
 |---|---|---|
-| GET | `/signals` | `?type=ABC\|TOP\|IMALOL & market & timeframe & instrument_id & watchlist_only & status & near_only & cursor`. 카드: type, market, instrument, timeframe, status, score, current_price, **c_target(ABC/TOP)**, pivots 요약(0/A/B 일자), detected_at, freshness |
+| GET | `/signals` | `?type=ABC\|TOP\|IMALOL & market & timeframe & instrument_id & watchlist_only & status & near_only & active_only & cursor`. **`active_only=true`(R54)**면 DETECTED/NEAR_COMPLETION만(만료·무효 숨김). 기본 false(하위호환). 카드: type, market, instrument, timeframe, status, score, current_price, **c_target(ABC/TOP)**, pivots 요약(0/A/B 일자), detected_at, freshness |
 | GET | `/signals/top` | 오늘의 주목 신호(R41): `?market=&limit=`(기본 10·최대 30). 활성 신호(DETECTED/NEAR_COMPLETION) Pattern Score 상위. 카드 형식은 `/signals`와 동일 |
 | GET | `/signals/{id}` | evidence(피벗/추세선/볼린저/매치박스), invalidation, c_target, chart_range, algorithm_version, **event_risk(R39, nullable)** |
 | GET | `/signals/{id}/explain` | Pattern Score(완성도30·거래량20·추세20·변동성10·뉴스20), 규칙 기반 근거·위험·다음 확인, Risk Guard(PASS/WARN/BLOCK), 1d 성과 표본 기반 Confidence |
@@ -58,7 +58,9 @@
 | GET | `/scalp/ranking` | 틱띄기: `?limit=` 업비트 24h 거래대금 상위 마켓 스캘핑 점수 랭킹(symbol, scalp_score, spread_ticks, tps, micro_vol, ob_imbalance, wall_state). 서버 WS 수집값 폴링 |
 | GET | `/scalp/{symbol}` | 상세: 최근 체결 흐름(매수/매도 비율), 호가 상위레벨, 벽/취소의심 |
 | POST | `/scanner/run` | 조건검색 즉시 실행 `{market,timeframe,logic,conditions[]}`. v1 지표: RSI, VOLUME_RATIO, PRICE→MA20, MA5→MA20, MACD_HISTOGRAM |
-| GET/POST/DELETE | `/scanner/rules[/{id}]` | 사용자별 조건검색식 목록·저장·삭제 |
+| GET/POST/PATCH/DELETE | `/scanner/rules[/{id}]` | 사용자별 조건검색식 목록·저장·수정(활성 토글)·삭제. **저장(POST)은 FREE 플랜 최대 3개**(초과 `402 PLAN_LIMIT_EXCEEDED`, R52). 빈/부분 바디는 `400`(R58) |
+| POST | `/scanner/rules/{id}/simulate` | 현재 스냅샷에 저장식 실행 → 평가/매칭 수·매치율·빈도등급(LOW/MEDIUM/HIGH)·표본 |
+| GET | `/scanner/rules/{id}/history` | 저장식 최근 실행 이력 |
 
 스캐너 파라미터(서버 고정, 노출용): ABC `MIN_A_DROP_PCT=0.20, MIN_B_RETRACE=[0.236,0.886], LOCAL_WIN=5, SEARCH_WINDOW=100, MIN_0_PROMINENCE=0.10, STRICT_WAVE=true, MAX_PATTERNS=3`. 재스캔: 주/3일/일 4h마다, 4h/1h/15m 각 주기.
 
@@ -76,9 +78,12 @@
 | GET | `/funding-arb` | `?sort=` 업비트 현물 vs Bybit 선물 펀딩비 차익(symbol, funding_pct, upbit_price, bybit_price, next_funding_at, expected_1x_pct, expected_2x_pct). 수수료 Upbit 0.05%/Bybit 0.055% 왕복 반영 |
 
 ## 7. 알림 — `alert`/`notification` (패턴 3종 + 가격 지원)
-| GET `/alerts` (목록) | POST `/alerts` `{instrument_id, signal_type(ABC/TOP/IMALOL), timeframe, market, cooldown_sec}` | PATCH `/alerts/{id}` `{enabled,cooldown_sec}` |
-| GET `/notifications?unread_only&cursor` | PATCH `/notifications/{id}/read` · POST `/notifications/{id}/deliveries/web-push` (브라우저 표시 성공 멱등 확인) |
-| GET/PUT `/me/notification-prefs` | 조용한 시간(R42): `{quiet_enabled, quiet_start_hour, quiet_end_hour}`(KST 0-23). 창 동안 새 알림 생성 스킵(쿨다운 미진전). start>end면 자정 넘김, start==end면 창 없음 |
+| GET `/alerts` (목록) | POST `/alerts` `{instrument_id, signal_type(ABC/TOP/IMALOL), timeframe, market, cooldown_sec}` | PATCH `/alerts/{id}` `{enabled,cooldown_sec}` | **DELETE `/alerts/{id}`**(R62, 소유자만·404 IDOR-safe) |
+| POST `/alerts` **FREE 플랜 최대 10개**(초과 `402 PLAN_LIMIT_EXCEEDED`, R56) |
+| GET `/notifications?unread_only&cursor` | PATCH `/notifications/{id}/read` · **POST `/notifications/read-all`**(활성 안읽음 일괄 읽음→`{updated}`, R63) · POST `/notifications/{id}/deliveries/web-push` (브라우저 표시 성공 멱등 확인) |
+| GET `/notifications/digest?window=` | 읽기 시점 요약(R45·R51): 창(시간, 기본 24·최대 168) 내 알림을 분류(SIGNAL/SCANNER/LIQUIDATION/SYSTEM)별 집계 + 안읽은 최신 표본 + `released`(스풀링 방출 수) + 요약 문장. 보류 중(held_until>now)은 제외 |
+| GET/PUT `/me/notification-prefs` | 조용한 시간(R42): `{quiet_enabled, quiet_start_hour, quiet_end_hour}`(KST 0-23). 창 동안 온 알림은 **드롭이 아니라 보류(R46 스풀링)**, 창 종료 시 방출. start>end면 자정 넘김, start==end면 창 없음 |
+| GET `/me/onboarding` · POST `/me/onboarding/dismiss` | "시작하기" 체크리스트(R48): 관심종목·알림·모의투자·조건검색 스텝 완료를 실제 데이터에서 파생 + 진행률 + 닫힘. 스텝: `{key,label,done,href}` |
 
 ## 8. 시스템 — `ops`
 | GET `/system/status` | `providers[]{provider, freshness(FRESH\|DELAYED\|UNKNOWN), source(REAL\|STUB), last_run_at}` + `scanner_status` + `build_version` + `sidecar{healthy,url}`. provider: upbit/binance/coingecko/defillama/yfinance/pykrx/bybit/telegram/bloomberg/binance_futures |
@@ -105,6 +110,17 @@
 
 - **비로그인 공개** — `SecurityConfig`에서 `/api/v1/public/**` permitAll. **개별 신호·종목·원시 캔들은 미노출**(가공 통계만) — 법적 안전지대와 상업 논리가 같은 방향(MONETIZATION 단계2 ②).
 - **레이트리밋** — `PublicRateLimitFilter`: IP당 **60 req/min** 고정창, 초과 시 `429 RATE_LIMITED`(+`Retry-After: 60`). 현재 API 전체 중 이 경로에만 적용.
+
+## 10. 구독/운영 — `billing`/`admin` (Track C 착수)
+| Method | Path | 설명 |
+|---|---|---|
+| GET | `/me/entitlements` | 구독 엔타이틀먼트(R52·R60): `{tier(FREE\|PRO), pro, features[]{key,label,limit(-1=무제한),used}}`. 한도는 티어 파생(FREE: 저장식 3·알림 10 / PRO 무제한). `used`는 현재 사용 수 |
+| PATCH | `/admin/users/{id}/tier` | (운영자) 사용자 티어 설정 `{tier:FREE\|PRO}`(그 외 400). 감사 로그 `USER_TIER_UPDATE`. 결제 없이 PRO 부여/회수(R56) |
+| GET | `/admin/overview` | 운영 개요. `users{total, by_status, by_tier(R72)}` + alerts/notifications/explain/scanner_rules/signals/instruments 요약 |
+| PATCH | `/admin/users/{id}/approve\|lock` | 사용자 승인/잠금(감사 로그) |
+| GET | `/admin/users \| audit-logs \| notifications \| delivery-attempts/failed` | 사용자 목록·감사·최근 알림·실패 전달 |
+
+- **결제 미연동** — 티어는 운영자가 수동 부여(`PATCH .../tier`)하며 게이트(저장식·알림 한도)는 실집행(`402 PLAN_LIMIT_EXCEEDED`). 실 PG·자동 승급은 후속.
 
 ---
 

@@ -141,6 +141,7 @@
 | R71 | **오프라인 데모 mock landing 갭 수정** (Track B) — queries↔mockAdapter 정적 대조로 누락 발견: `/auth/signup`·`/public/reports/weekly` mock 핸들러 없어 mock 모드 랜딩(리포트·가입) 깨짐. 둘 다 추가, 실제 mock 빌드(포트 3100)로 랜딩·가입·로그인 검증. 백엔드 무변경 |
 | R72 | **Admin 개요에 구독 티어 집계** (Track C 운영) — 티어 실사용화됐으나 운영자가 FREE/PRO 분포를 못 보던 것을, `admin/overview` users에 `byTier` 추가 + admin "구독 티어" 분포·PRO 수 노출. 라이브 `{FREE:2}` 확인 |
 | R73 | **오프라인 데모 mock 전화면 검증 + 로그인 역할 일관성** (Track B) — mock 빌드(포트 3100) full smoke 0에러(전 화면 mock 핸들러 온전). mock 로그인/`/me` 역할을 usr_1과 일치하게 SUPER_ADMIN으로 수정(데모에서 관리화면 노출). 백엔드 무변경 |
+| R74 | **API_CONTRACT.md 동기화** (Track B 문서) — 단일 계약 문서에 R45~R73 누락 8개 그룹 반영: active_only·scanner 한도/simulate/history·alerts DELETE·notifications read-all/digest·onboarding·§10 구독/운영(entitlements·tier·by_tier). 문서↔실제 정적 대조로 검증 |
 
 ---
 
