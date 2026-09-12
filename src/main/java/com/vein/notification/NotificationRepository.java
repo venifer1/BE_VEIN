@@ -30,6 +30,16 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
                                 @Param("cursorId") Long cursorId,
                                 Pageable pageable);
 
+    /** 다이제스트용: 창 시작 이후 알림을 최신순으로. Pageable로 상한을 건다. */
+    @Query("""
+            SELECT n FROM Notification n
+            WHERE n.userId = :userId AND n.createdAt >= :since
+            ORDER BY n.createdAt DESC, n.id DESC
+            """)
+    List<Notification> findSince(@Param("userId") Long userId,
+                                 @Param("since") Instant since,
+                                 Pageable pageable);
+
     long countByUserIdAndStatusNot(Long userId, NotificationStatus status);
 
     Optional<Notification> findByIdAndUserId(Long id, Long userId);

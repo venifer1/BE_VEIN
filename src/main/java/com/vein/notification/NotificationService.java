@@ -1,5 +1,6 @@
 package com.vein.notification;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.vein.common.ApiException;
 import com.vein.common.CursorUtil;
 import com.vein.common.ErrorCode;
+import com.vein.notification.NotificationDigestDto.Digest;
 
 /**
  * Notification read-model queries plus in-app creation with idempotent dedup.
@@ -60,6 +62,34 @@ public class NotificationService {
         List<NotificationDto> items = rows.stream().map(NotificationDto::from).toList();
         int unreadCount = (int) notificationRepository.countByUserIdAndStatusNot(userId, NotificationStatus.READ);
         return new NotificationListResult(items, nextCursor, unreadCount);
+    }
+
+    private static final int DIGEST_DEFAULT_HOURS = 24;
+    private static final int DIGEST_MAX_HOURS = 168;
+    private static final int DIGEST_ROW_CAP = 500;
+
+    /**
+     * 읽기 시점 알림 요약 (Track A #3). {@code windowHours} 창(1~168, 기본 24) 안의 알림을
+     * 분류·집계한다. 저장 데이터를 바꾸지 않는 순수 집계 조회.
+     */
+    @Transactional(readOnly = true)
+    public Digest digest(Long userId, int windowHours) {
+        int window = Math.max(1, Math.min(windowHours, DIGEST_MAX_HOURS));
+        Instant now = Instant.now();
+        Instant since = now.minus(Duration.ofHours(window));
+        List<Notification> rows = notificationRepository.findSince(
+                userId, since, PageRequest.of(0, DIGEST_ROW_CAP));
+        List<NotificationDigest.Entry> entries = rows.stream()
+                .map(n -> new NotificationDigest.Entry(
+                        String.valueOf(n.getId()),
+                        n.getSignalId(),
+                        n.getTitle(),
+                        n.getBody(),
+                        n.getStatus().name(),
+                        n.getStatus() == NotificationStatus.READ,
+                        n.getCreatedAt()))
+                .toList();
+        return NotificationDigest.summarize(entries, window, now);
     }
 
     public NotificationDto markRead(Long userId, Long id) {

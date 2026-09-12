@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.vein.common.ApiResponse;
+import com.vein.notification.NotificationDigestDto.Digest;
 import com.vein.notification.NotificationService.NotificationListResult;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,6 +48,17 @@ public class NotificationController {
         Long userId = Long.parseLong(SecurityContextHolder.getContext().getAuthentication().getName());
         NotificationListResult result = notificationService.list(userId, unreadOnly, cursor);
         return ApiResponse.list(result.items(), result.nextCursor(), result.unreadCount());
+    }
+
+    @GetMapping("/digest")
+    @Operation(summary = "알림 다이제스트(읽기 시점 요약)",
+            description = "지정 창(window 시간, 기본 24 · 최대 168) 안의 알림을 분류(패턴 신호·조건검색·"
+                    + "청산 급증·시스템)별로 집계하고 안읽은 최신 표본과 요약 문장을 반환. 저장 데이터를 "
+                    + "바꾸지 않는 순수 조회. (Track A #3, 알림 노이즈 완화)")
+    public ApiResponse<Digest> digest(
+            @RequestParam(value = "window", defaultValue = "24") int window) {
+        Long userId = Long.parseLong(SecurityContextHolder.getContext().getAuthentication().getName());
+        return ApiResponse.of(notificationService.digest(userId, window));
     }
 
     @PatchMapping("/{id}/read")
