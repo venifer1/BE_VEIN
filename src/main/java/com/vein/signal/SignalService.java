@@ -189,6 +189,7 @@ public class SignalService {
                 ref,
                 signal.getTimeframe(),
                 TimeUtil.toIso(signal.getDetectedAt()),
+                TimeUtil.toIso(signal.getExpiresAt()),
                 signal.getScore() == null ? null : signal.getScore().toPlainString(),
                 signal.getCurrentPrice() == null ? null : signal.getCurrentPrice().toPlainString(),
                 signal.getCTarget() == null ? null : signal.getCTarget().toPlainString(),

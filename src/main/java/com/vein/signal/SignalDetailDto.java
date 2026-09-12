@@ -22,6 +22,7 @@ public record SignalDetailDto(
         InstrumentRef instrument,
         String timeframe,
         String detectedAt,
+        String expiresAt,
         String score,
         String currentPrice,
         String cTarget,

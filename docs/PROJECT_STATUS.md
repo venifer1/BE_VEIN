@@ -152,6 +152,7 @@
 | R82 | **시간 만료 신호 활성 후보 제외** (BE, read-model 정합성) — 활성상태 111건 중 58건이 `expires_at` 경과인데도 상태 미전이(스케줄러 지연/게이트)로 `top`·활성목록이 만료 신호를 최신 후보로 노출(홈이 3개월 지난 IMALOL을 score100 최상단에 띄움). `findTopByScore`·`findPage`(activeOnly 분기)에 `expiresAt>:now` 가드 추가(비파괴적 read 필터, 상태 전이는 여전히 스케줄러). 기본 목록(active_only=false) 하위호환. 라이브 top이 유효 후보(AMZN·CI·ABBV…)로 교체, smoke 0에러 |
 | R83 | **신호 카드 관심 등록 토글** (FE, 마찰 감소) — 관심 등록이 신호 상세에서만 가능해 홈 주목신호·스캐너 목록에서 바로 못 담던 것을, `SignalCard`에 별 토글 추가(담김=채운 별). `useWatchlist`로 소속 판정, add/remove 훅으로 토글, `<Link>` 내부라 prevent/stopPropagation. 3곳(홈·스캐너·종목상세) 공유 일괄 적용, 워치리스트 쿼리 키 공유로 카드별 재요청 없음. mock 패리티 O. FE 전용, typecheck/build/smoke 0에러, 워치리스트 add/remove 왕복 실측 |
 | R84 | **신호 상세 액션 시장별 현실화** (FE) — "다음 액션"이 주식에도 FUTURES+레버리지+롱/숏을 하드코딩하던 것을(비현실적 "AMZN 3배 숏"), `market==="CRYPTO"` 분기로 코인=선물 롱/숏+레버리지, 주식=현물 매수(SPOT BUY, 레버리지·숏 숨김+안내)로 수정. 백엔드 무변경. typecheck/build/smoke 0에러, 주식 상세 단일 현물매수 렌더 확인, `POST /paper/orders SPOT`(AMZN)→201 FILLED(leverage 1) 실측 후 리셋 원복 |
+| R85 | **신호 상세 유효기간(만료 D-day) 노출** (BE+FE) — 활성 신호가 언제까지 유효한지 안 보이던 것을, `SignalDetailDto.expiresAt` 추가(detail()에서 채움)+상세 헤더에 "유효기간 {일시} (D-N)" 라인(임박 경고색, 만료시 "만료됨·갱신대기"). setup 잔여 유효기간을 진입 판단에 제공. mock도 expires_at 파리티(detected+30d). BE test 그린, 실측 `/signals/88`={expires 2026-09-14, D-2}, FE build/smoke 0에러 |
 
 ---
 
