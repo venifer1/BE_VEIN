@@ -98,12 +98,19 @@ public final class NotificationDigest {
         return "SYSTEM";
     }
 
+    /** 창 길이를 사람이 읽는 라벨로: 24 초과 & 24의 배수면 "N일"(예: 168→7일), 그 외 "N시간". */
+    private static String windowLabel(int windowHours) {
+        return (windowHours > 24 && windowHours % 24 == 0)
+                ? "최근 " + (windowHours / 24) + "일"
+                : "최근 " + windowHours + "시간";
+    }
+
     private static String summary(int windowHours, int total, int unread, List<CategoryCount> categories) {
         if (total == 0) {
-            return "최근 " + windowHours + "시간 새 알림이 없습니다.";
+            return windowLabel(windowHours) + " 새 알림이 없습니다.";
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("최근 ").append(windowHours).append("시간 알림 ").append(total)
+        sb.append(windowLabel(windowHours)).append(" 알림 ").append(total)
                 .append("건 (안읽음 ").append(unread).append("건)");
         if (!categories.isEmpty()) {
             sb.append(" · ");

@@ -95,6 +95,13 @@ class NotificationDigestTest {
     }
 
     @Test
+    void multiDayWindowLabelsAsDays() {
+        // 168시간(=7일)은 "최근 7일"로 표기
+        Digest d = NotificationDigest.summarize(List.of(entry("1", 10L, "s signal", false, 5)), 168, NOW);
+        assertThat(d.summary()).startsWith("최근 7일");
+    }
+
+    @Test
     void emptyWindowGivesNoNewNotificationsSummary() {
         Digest d = NotificationDigest.summarize(List.of(), 12, NOW);
 
