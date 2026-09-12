@@ -120,6 +120,7 @@
 | R50 | **데이터 출처 사용지점 노출** (Track B #3) — R40이 설정 한 곳에만 REAL/STUB를 보여주던 것을, 기존 `/system/status`를 사용 지점에서 읽어 확장. 전역 배너(`DataSourceBanner`, 사이드카 다운/STUB 시 상단 상시 "합성값" 경고+설정 링크) + 종목 상세 `MarketStubBadge`(미국 yfinance·국내 pykrx 합성 시 "합성" 배지). 프론트 전용, 백엔드/계약 무변경 |
 | R51 | **다이제스트 조용한시간 방출 요약** (Track A #3 후속) — R46 스풀링으로 보류됐다 방출된 건수를 R45 다이제스트에 `released`로 집계(읽기 시점, 스케줄러 없음). 설정 "알림 요약"에 "보류됐다 방금 도착 N건" 라인. 단위 6/6 |
 | R52 | **Track C 착수: 구독 티어 + 엔타이틀먼트** — V28 `users.tier`(FREE/PRO). `com.vein.billing`: `Entitlements`(순수 티어→한도), `GET /me/entitlements`, 게이트 1개(FREE 저장식 3개 초과 시 402 PLAN_LIMIT_EXCEEDED). 설정 "구독" 카드. **결제 연동·기능제한 전면적용은 후속**. 단위 5/5 |
+| R53 | **저가-이탈 무효화 완화 버퍼** (사용자 요청) — ABC(A 저점)·TOP(B 저점) 무효화가 1틱만 깨도 죽던 것을, `low < 기준선×(1−buffer)`일 때만 무효로 완화(꼬리/노이즈 흡수). `vein.signal.invalidation-buffer-pct` 기본 3%(env로 조정). 순수 `breaches()` 단위 5/5. FE 무변경 |
 
 ---
 

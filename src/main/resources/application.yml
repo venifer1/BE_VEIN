@@ -46,6 +46,11 @@ vein:
   # false면 승인제(PENDING) 복귀. 봇 가입 급증 시 env로 즉시 잠글 수 있다.
   signup:
     auto-approve: ${SIGNUP_AUTO_APPROVE:true}
+  # 저가-이탈 무효화 완화(R53). ABC(A 저점)·TOP(B 저점) 신호는 확정봉 저가가 기준선보다
+  # 이 비율 이상 아래로 내려가야 무효 처리한다. 얕은 꼬리/노이즈성 이탈을 봐준다.
+  # 0이면 기존 동작(1틱만 깨도 무효), 0.03=3%, 0.05=5%.
+  signal:
+    invalidation-buffer-pct: ${SIGNAL_INVALIDATION_BUFFER_PCT:0.03}
   # 거시경제/시장국면 엔진(§15.1·§39). 국면은 내부 데이터로 항상 판정되고,
   # FRED 키가 있으면 금리차·M2·달러인덱스를 보강한다(없으면 조용히 생략).
   #   무료 키 발급: https://fred.stlouisfed.org/docs/api/api_key.html

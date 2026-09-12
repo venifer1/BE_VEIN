@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,11 +23,16 @@ public class SignalStatusTransitionService {
 
     private final PatternSignalRepository signalRepository;
     private final CandleRepository candleRepository;
+    /** 저가-이탈 무효화 완화 버퍼(R53). 저가가 기준선보다 이 비율 이상 아래여야 무효. */
+    private final BigDecimal invalidationBufferPct;
 
     public SignalStatusTransitionService(PatternSignalRepository signalRepository,
-                                         CandleRepository candleRepository) {
+                                         CandleRepository candleRepository,
+                                         @Value("${vein.signal.invalidation-buffer-pct:0.03}")
+                                         BigDecimal invalidationBufferPct) {
         this.signalRepository = signalRepository;
         this.candleRepository = candleRepository;
+        this.invalidationBufferPct = invalidationBufferPct;
     }
 
     /** ABC/TOP promote to NEAR_COMPLETION when latest price is within this of C target.
@@ -102,11 +108,25 @@ public class SignalStatusTransitionService {
                 continue;
             }
             if (c.getId().getOpenTime().isAfter(anchor)
-                    && c.getLow() != null && c.getLow().compareTo(aLow) < 0) {
+                    && breaches(c.getLow(), aLow, invalidationBufferPct)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * 저가-이탈 판정(R53 완화). {@code low}가 기준선({@code invalidationPrice})보다 {@code bufferPct}
+     * 이상 아래로 내려갔을 때만 참. 즉 임계선 = 기준선 × (1 − buffer). {@code buffer=0}이면 기존처럼
+     * 1틱만 깨도 무효. 얕은 꼬리/노이즈성 이탈을 봐준다. 순수 함수(테스트 용이).
+     */
+    static boolean breaches(BigDecimal low, BigDecimal invalidationPrice, BigDecimal bufferPct) {
+        if (low == null || invalidationPrice == null) {
+            return false;
+        }
+        BigDecimal buffer = (bufferPct == null || bufferPct.signum() < 0) ? BigDecimal.ZERO : bufferPct;
+        BigDecimal threshold = invalidationPrice.multiply(BigDecimal.ONE.subtract(buffer));
+        return low.compareTo(threshold) < 0;
     }
 
     private static final class AbcInvalidation {
