@@ -117,6 +117,7 @@
 | R47 | **차트 조작감** (Track A #3 마지막) — `chart-view.tsx`(lightweight-charts)가 팬/줌·과거캔들 로드·리사이즈마다 차트를 **통째 재생성**하던 것을, **마운트 1회 생성 + 부분 갱신 effect**로 리팩터(동적 시리즈·가격선 ref 추적, 콜백 ref화). 크로스헤어 OHLC 레전드(날짜·시고저종·등락%), 모바일 터치/핀치/키네틱 튜닝(vertTouchDrag off로 페이지 스크롤 보존). 백엔드/계약 무변경. FE typecheck/build/smoke 0에러 |
 | R48 | **온보딩 "시작하기" 체크리스트** (Track B #2) — `GET /me/onboarding`(관심종목·알림·모의투자·조건검색 스텝 완료를 **실제 데이터에서 파생** + 진행률) + `POST /dismiss`(V27 `users.onboarding_dismissed_at`). `OnboardingSteps` 순수 조립(단위 5/5). 홈 상단 "시작하기" 카드(완료=취소선·미완료=딥링크, all_done·dismissed면 숨김). Track B 첫 라운드 |
 | R49 | **엣지케이스: 미매핑 경로 404 정규화** (Track B #4) — 신규 유저 GET 훑기 실측으로 **인증 통과 미매핑 경로가 전부 500**(catch-all이 `NoResourceFoundException`을 삼켜 ERROR 로그+500)임을 발견. `GlobalExceptionHandler`에 `NoResourceFound/NoHandlerFound→404 NOT_FOUND` 핸들러 추가(R43 보완). 단위 6/6. 인접 엣지(bad path var·cursor·window)는 R43로 이미 견고함을 실측 확인 |
+| R50 | **데이터 출처 사용지점 노출** (Track B #3) — R40이 설정 한 곳에만 REAL/STUB를 보여주던 것을, 기존 `/system/status`를 사용 지점에서 읽어 확장. 전역 배너(`DataSourceBanner`, 사이드카 다운/STUB 시 상단 상시 "합성값" 경고+설정 링크) + 종목 상세 `MarketStubBadge`(미국 yfinance·국내 pykrx 합성 시 "합성" 배지). 프론트 전용, 백엔드/계약 무변경 |
 
 ---
 
@@ -165,7 +166,7 @@
 1. **Flutter 앱 따라잡기** — 또는 **명시적으로 접기**. 지금처럼 절반만 살아있는 게 제일 나쁘다
    - 기획서 2.1도 "Next.js 우선, Flutter는 검증 후 전환"이라 접는 것도 정합적인 선택
 2. ✅ **온보딩** — 홈 "시작하기" 체크리스트(관심종목·알림·모의투자·조건검색, 실제 상태 파생)로 신규 유저를 핵심 기능에 안내(R48). 남은 것: 가입 직후 웰컴/투어 심화는 후속
-3. **데이터 출처·지연 표시 강화** — 스텁 폴백이 조용히 일어나는 걸 사용자가 알 수 있어야 함
+3. ✅ **데이터 출처·지연 표시 강화** — R40(설정 배지)에 이어 R50에서 **사용 지점**으로 확장: 전역 합성값 경고 배너 + 종목 상세 "합성" 배지. 스텁 폴백을 데이터 보는 자리에서 바로 인지
 4. **엣지케이스** — 나 혼자 쓰는 경로만 밟고 있어서 잠재된 것들. ✅ 잘못된 요청 4xx(R43), ✅ 미매핑 경로 404(R49, 신규유저 실측으로 발견). 인접 엣지(path var·cursor·window 클램프)는 실측상 이미 견고
 
 ### Track C — 상용화하려면
