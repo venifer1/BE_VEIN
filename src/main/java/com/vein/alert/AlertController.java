@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -56,6 +57,14 @@ public class AlertController {
     public ApiResponse<AlertDto> update(@PathVariable Long id, @Valid @RequestBody UpdateAlertRequest request) {
         Long userId = Long.parseLong(SecurityContextHolder.getContext().getAuthentication().getName());
         return ApiResponse.of(alertService.update(userId, id, request.enabled(), request.cooldownSec()));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete an alert rule")
+    public ApiResponse<Void> delete(@PathVariable Long id) {
+        Long userId = Long.parseLong(SecurityContextHolder.getContext().getAuthentication().getName());
+        alertService.delete(userId, id);
+        return ApiResponse.of(null);
     }
 
     /** Request body for POST; client sends snake_case fields. */

@@ -6,10 +6,16 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
+
+    /** 알림 규칙 삭제 전 FK(notifications.alert_id) 언링크(R62). 알림 이력은 보존. */
+    @Modifying
+    @Query("update Notification n set n.alertId = null where n.alertId = :alertId")
+    int clearAlertId(@Param("alertId") Long alertId);
 
     /**
      * Cursor page, newest-first. When {@code unreadOnly} is true, READ notifications

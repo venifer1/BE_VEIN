@@ -9,6 +9,7 @@ import com.vein.billing.EntitlementsService;
 import com.vein.common.ApiException;
 import com.vein.common.ErrorCode;
 import com.vein.instrument.InstrumentService;
+import com.vein.notification.NotificationRepository;
 import com.vein.signal.SignalType;
 
 /**
@@ -23,12 +24,15 @@ public class AlertService {
     private final AlertRepository alertRepository;
     private final InstrumentService instrumentService;
     private final EntitlementsService entitlementsService;
+    private final NotificationRepository notificationRepository;
 
     public AlertService(AlertRepository alertRepository, InstrumentService instrumentService,
-                        EntitlementsService entitlementsService) {
+                        EntitlementsService entitlementsService,
+                        NotificationRepository notificationRepository) {
         this.alertRepository = alertRepository;
         this.instrumentService = instrumentService;
         this.entitlementsService = entitlementsService;
+        this.notificationRepository = notificationRepository;
     }
 
     @Transactional(readOnly = true)
@@ -98,6 +102,20 @@ public class AlertService {
             alert.setCooldownSec(cooldownSec);
         }
         return AlertDto.from(alertRepository.save(alert), symbolOf(alert.getInstrumentId()));
+    }
+
+    /**
+     * 알림 규칙 삭제 (R62). 소유자만. 존재하지 않거나 남의 것이면 404(존재 여부 미노출).
+     * FK(notifications.alert_id) 때문에 삭제 전 관련 알림의 링크를 끊는다(알림 이력은 보존).
+     */
+    public void delete(Long userId, Long alertId) {
+        Alert alert = alertRepository.findById(alertId)
+                .orElseThrow(() -> new ApiException(ErrorCode.ALERT_NOT_FOUND));
+        if (!alert.getUserId().equals(userId)) {
+            throw new ApiException(ErrorCode.ALERT_NOT_FOUND);
+        }
+        notificationRepository.clearAlertId(alertId);
+        alertRepository.delete(alert);
     }
 
     private SignalType parseSignalType(String signalType) {
