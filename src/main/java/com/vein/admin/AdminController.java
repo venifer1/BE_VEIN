@@ -16,11 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.vein.alert.Alert;
 import com.vein.alert.AlertRepository;
+import com.vein.billing.Entitlements;
 import com.vein.common.ApiException;
 import com.vein.common.ApiResponse;
 import com.vein.common.ErrorCode;
@@ -267,6 +269,31 @@ public class AdminController {
             throw new ApiException(ErrorCode.INVALID_QUERY, "Cannot lock the current admin user");
         }
         return ApiResponse.of(updateUserStatus(id, UserStatus.LOCKED, request));
+    }
+
+    @PatchMapping("/users/{id}/tier")
+    @Operation(summary = "Set a user's subscription tier (FREE/PRO)")
+    @Transactional
+    public ApiResponse<UserDto> setUserTier(@PathVariable Long id,
+                                            @RequestBody SetTierRequest body,
+                                            HttpServletRequest request) {
+        String next = body == null ? null : body.tier();
+        if (next == null || !(Entitlements.FREE.equalsIgnoreCase(next) || Entitlements.PRO.equalsIgnoreCase(next))) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "tier must be FREE or PRO");
+        }
+        String normalized = Entitlements.normalize(next);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND));
+        String previous = user.getTier();
+        user.updateTier(normalized);
+        User saved = userRepository.save(user);
+        auditService.record(currentActorId(), "USER_TIER_UPDATE", "user:" + id, clientIp(request),
+                Map.of("email", user.getEmail(), "from", String.valueOf(previous), "to", normalized));
+        return ApiResponse.of(UserDto.from(saved));
+    }
+
+    /** Body for PATCH /users/{id}/tier. */
+    public record SetTierRequest(String tier) {
     }
 
     @GetMapping("/audit-logs")

@@ -83,4 +83,9 @@ public class User {
             this.onboardingDismissedAt = now;
         }
     }
+
+    /** 구독 티어 변경(R56, admin). 정규화는 호출부(FREE/PRO 검증)에서 한다. */
+    public void updateTier(String tier) {
+        this.tier = tier;
+    }
 }

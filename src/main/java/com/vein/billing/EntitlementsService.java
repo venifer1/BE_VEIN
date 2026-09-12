@@ -35,4 +35,10 @@ public class EntitlementsService {
     public int scannerRuleLimit(Long userId) {
         return Entitlements.scannerRuleLimit(tierOf(userId));
     }
+
+    /** 신호 알림 규칙 한도(-1=무제한). 게이트 재사용. */
+    @Transactional(readOnly = true)
+    public int alertLimit(Long userId) {
+        return Entitlements.alertLimit(tierOf(userId));
+    }
 }

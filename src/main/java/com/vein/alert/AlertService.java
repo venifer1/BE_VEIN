@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.vein.billing.EntitlementsService;
 import com.vein.common.ApiException;
 import com.vein.common.ErrorCode;
 import com.vein.instrument.InstrumentService;
@@ -21,10 +22,13 @@ public class AlertService {
 
     private final AlertRepository alertRepository;
     private final InstrumentService instrumentService;
+    private final EntitlementsService entitlementsService;
 
-    public AlertService(AlertRepository alertRepository, InstrumentService instrumentService) {
+    public AlertService(AlertRepository alertRepository, InstrumentService instrumentService,
+                        EntitlementsService entitlementsService) {
         this.alertRepository = alertRepository;
         this.instrumentService = instrumentService;
+        this.entitlementsService = entitlementsService;
     }
 
     @Transactional(readOnly = true)
@@ -49,6 +53,13 @@ public class AlertService {
                 .ifPresent(existing -> {
                     throw new ApiException(ErrorCode.DUPLICATE_ALERT);
                 });
+
+        // 구독 게이트(R56, Track C): FREE는 알림 규칙 개수 제한. PRO(-1)는 무제한.
+        int limit = entitlementsService.alertLimit(userId);
+        if (limit >= 0 && alertRepository.countByUserId(userId) >= limit) {
+            throw new ApiException(ErrorCode.PLAN_LIMIT_EXCEEDED,
+                    "무료 플랜은 알림 규칙을 최대 " + limit + "개까지 만들 수 있어요. PRO로 업그레이드하면 무제한입니다.");
+        }
 
         Alert alert = Alert.builder()
                 .userId(userId)
