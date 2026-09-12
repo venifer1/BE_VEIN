@@ -1,5 +1,6 @@
 package com.vein.signal;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -119,12 +120,28 @@ public class SignalService {
     public List<SignalDto> top(String market, int limit) {
         String marketFilter = (market == null || market.isBlank()) ? null : market.toUpperCase();
         int size = Math.max(1, Math.min(limit, 30));
-        List<PatternSignal> rows = signalRepository.findTopByScore(
-                marketFilter, Pageable.ofSize(size));
+        // 같은 종목이 타임프레임만 달리해(예: 1w·3d 동일 IMALOL) 상위를 점유하면 홈 요약 슬롯이
+        // 낭비되고 서로 다른 후보를 못 본다 → 종목별 최상위 1건만 남긴다. 쿼리가 score desc·
+        // detectedAt desc라 종목별 첫 등장이 최상위. 넉넉히 받아 dedup 후 size로 자른다. (R81)
+        int fetch = Math.min(size * 5, 100);
+        List<PatternSignal> rows = dedupeByInstrument(
+                signalRepository.findTopByScore(marketFilter, Pageable.ofSize(fetch)), size);
         List<Long> instrumentIds = rows.stream().map(PatternSignal::getInstrumentId).distinct().toList();
         Map<Long, Instrument> instruments = instrumentRepository.findAllById(instrumentIds).stream()
                 .collect(Collectors.toMap(Instrument::getId, Function.identity()));
         return rows.stream().map(s -> toDto(s, instruments)).toList();
+    }
+
+    /**
+     * 종목별 최상위 1건만 남겨 상위 {@code limit}개를 고른다. 입력은 이미 우선순위(점수·최신) 정렬된
+     * 순서라고 가정하고, 종목이 처음 등장한 신호를 채택한다(putIfAbsent). 순수 함수(테스트 용이).
+     */
+    static List<PatternSignal> dedupeByInstrument(List<PatternSignal> ordered, int limit) {
+        LinkedHashMap<Long, PatternSignal> byInstrument = new LinkedHashMap<>();
+        for (PatternSignal s : ordered) {
+            byInstrument.putIfAbsent(s.getInstrumentId(), s);
+        }
+        return byInstrument.values().stream().limit(Math.max(0, limit)).toList();
     }
 
     public SignalDetailDto detail(Long id) {

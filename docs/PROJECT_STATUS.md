@@ -148,6 +148,7 @@
 | R78 | **비관리자 admin 접근 500 → 403 정규화** (BE, 견고성) — 신규 TESTER 토큰 GET 훑기 실측으로 `/admin/**` 전 엔드포인트가 비관리자에게 **500**(catch-all이 `@PreAuthorize`의 `AuthorizationDeniedException`을 삼켜 500+ERROR로그)임을 발견. `GlobalExceptionHandler`에 `AccessDeniedException→403 FORBIDDEN` 핸들러 추가(R43/R49 견고성 보완, 로그 미출력). 신규 스키마 없음. 단위 `accessDenied_maps_to_403` 추가·전체 그린, 라이브 TESTER 4개 admin 경로 403·admin 200·미인증 401·`Unhandled exception` 0건, smoke 0에러 |
 | R79 | **Explain 피드백 `helpful` 필수화** (BE, 무결성) — 쓰기 엔드포인트 빈/불량 바디 스윕에서 `POST /explain/{id}/feedback`만 빈 바디 `{}`가 200 통과함을 발견. `Request.helpful`이 primitive boolean이라 누락 시 `false`로 채워져 "아쉬워요"가 조용히 기록·유용률(R22) 오염. `@NotNull Boolean`으로 변경 → 누락/null 400. 나머지 쓰기 경로는 R43/R58/R59로 이미 견고(전부 400/404). 단위 `ExplainFeedbackRequestTest` 2건 추가·그린, 라이브 `{}`·null→400·`true`→200, smoke 0에러 |
 | R80 | **IMALOL C 예상가 거리 노출** (FE, R66/R67 확장) — 활성 신호의 큰 축인 IMALOL이 항상 `c_target`(=projectedClose 박스 투영가)을 갖는데 카드/상세의 C목표 거리(R66)가 ABC/TOP 전용이라 빠져 있던 것을 확장. 카드는 "C {가격} (±X%)", 상세는 라벨 구분(ABC/TOP="C 목표가", IMALOL="C 예상가", Explain 문구와 일치). R:R은 invalidation 있는 ABC/TOP 유지(IMALOL은 무효화가 null). mock 이미 패리티. FE 전용, typecheck/build/라이브 smoke 0에러, IMALOL 상세 c_target 렌더 확인 |
+| R81 | **홈 주목신호 종목별 dedup** (BE, 큐레이션 품질) — 실화면 점검에서 `/signals/top`이 같은 종목을 타임프레임만 달리해(1w·3d 동일 IMALOL) 중복 노출함을 발견(6칸에 WBA 2번=유니크 5). `SignalService.top()`에 종목별 최상위 1건만 남기는 `dedupeByInstrument`(넉넉히 fetch 후 dedup) 추가. 정렬·필터·계약 무변경. 단위 3건 그린, 라이브 `top?limit=6`→6종목 유니크(빈 슬롯을 다른 시장·패턴 후보가 채움), smoke 0에러. (참고: top은 구조점수 정렬 — 종합 Pattern Score 정렬은 pattern_score 영속화 선행 필요, 백로그) |
 
 ---
 
