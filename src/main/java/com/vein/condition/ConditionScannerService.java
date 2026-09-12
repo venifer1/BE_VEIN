@@ -229,7 +229,8 @@ public class ConditionScannerService {
     private Validated validate(RunRequest request) {
         if (request == null) throw new ApiException(ErrorCode.VALIDATION_ERROR);
         String market = upper(request.market());
-        if (!MARKETS.contains(market)) {
+        // Set.of(...).contains(null)은 NPE를 던진다(immutable Set 규약) → null을 먼저 걸러 400으로.
+        if (market == null || !MARKETS.contains(market)) {
             throw new ApiException(ErrorCode.INVALID_FILTER, "Unsupported market");
         }
         String timeframe;
@@ -239,7 +240,7 @@ public class ConditionScannerService {
             throw new ApiException(ErrorCode.INVALID_FILTER, "Unsupported timeframe");
         }
         String logic = upper(request.logic());
-        if (!Set.of("AND", "OR").contains(logic)) {
+        if (logic == null || !Set.of("AND", "OR").contains(logic)) {
             throw new ApiException(ErrorCode.INVALID_FILTER, "logic must be AND or OR");
         }
         List<Condition> conditions = request.conditions();
@@ -252,11 +253,13 @@ public class ConditionScannerService {
     }
 
     private void validateCondition(Condition condition) {
-        if (condition == null || !INDICATORS.contains(upper(condition.indicator()))
-                || !OPERATORS.contains(condition.operator())) {
+        // null indicator/operator는 Set.of().contains(null) NPE를 유발하므로 먼저 거른다(→400).
+        String indicator = upper(condition == null ? null : condition.indicator());
+        String operator = condition == null ? null : condition.operator();
+        if (indicator == null || !INDICATORS.contains(indicator)
+                || operator == null || !OPERATORS.contains(operator)) {
             throw new ApiException(ErrorCode.INVALID_FILTER, "Unsupported condition");
         }
-        String indicator = upper(condition.indicator());
         if (Set.of("PRICE", "MA5").contains(indicator)) {
             if (!"MA20".equals(upper(condition.target()))) {
                 throw new ApiException(ErrorCode.INVALID_FILTER, indicator + " target must be MA20");
