@@ -48,6 +48,10 @@ public class User {
     @Column(name = "signup_referrer", length = 255, updatable = false)
     private String signupReferrer;
 
+    /** 온보딩 "시작하기" 카드를 닫은 시각(R48). NULL이면 아직 안 닫음. */
+    @Column(name = "onboarding_dismissed_at")
+    private Instant onboardingDismissedAt;
+
     /** New public-signup user (MONETIZATION 단계2 ①). Role fixed to TESTER; status set by caller. */
     public static User create(String email, String passwordHash, String role, UserStatus status,
                               String signupSource, String signupReferrer) {
@@ -67,5 +71,12 @@ public class User {
 
     public void updateStatus(UserStatus status) {
         this.status = status;
+    }
+
+    /** 온보딩 카드를 닫는다(R48). 멱등 — 이미 닫혔으면 시각을 유지한다. */
+    public void dismissOnboarding(Instant now) {
+        if (this.onboardingDismissedAt == null) {
+            this.onboardingDismissedAt = now;
+        }
     }
 }

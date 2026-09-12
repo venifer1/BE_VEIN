@@ -115,6 +115,7 @@
 | R45 | **알림 다이제스트(읽기 시점 요약)** (Track A #3, 알림 노이즈 완화) — `GET /notifications/digest?window=`(창 안 알림을 SIGNAL/SCANNER/LIQUIDATION/SYSTEM 분류별 집계 + 안읽은 최신 표본 + 요약 문장). 순수 집계기 `NotificationDigest`(단위 5/5). 설정 "알림 요약" 카드. 별개로 클린 DB 부팅 중 **R42 잔여 스키마 드리프트 발견 → V25**(`notification_prefs` 시각 컬럼 int2→int4, 엔티티 `int`와 validate 충돌 해소) |
 | R46 | **알림 스풀링(조용한 시간 보류 후 방출)** (Track A #3 마무리) — V26 `notifications.held_until`. R42가 조용한 시간에 알림을 **드롭**(영구 소실)하던 것을, `held_until`(창 종료 시각)까지 **보류**했다가 창이 끝나면 읽기 모델에 자연 노출(lazy-release, 스케줄러 없음). 목록·안읽음·다이제스트가 `held_until<=now`만 활성 취급, 보류 시 웹푸시 스킵. `AlertEvaluationService` 드롭→보류. `windowEnd` 순수 정적(단위 6/6). 설정 "조용한 시간" 문구 정정 |
 | R47 | **차트 조작감** (Track A #3 마지막) — `chart-view.tsx`(lightweight-charts)가 팬/줌·과거캔들 로드·리사이즈마다 차트를 **통째 재생성**하던 것을, **마운트 1회 생성 + 부분 갱신 effect**로 리팩터(동적 시리즈·가격선 ref 추적, 콜백 ref화). 크로스헤어 OHLC 레전드(날짜·시고저종·등락%), 모바일 터치/핀치/키네틱 튜닝(vertTouchDrag off로 페이지 스크롤 보존). 백엔드/계약 무변경. FE typecheck/build/smoke 0에러 |
+| R48 | **온보딩 "시작하기" 체크리스트** (Track B #2) — `GET /me/onboarding`(관심종목·알림·모의투자·조건검색 스텝 완료를 **실제 데이터에서 파생** + 진행률) + `POST /dismiss`(V27 `users.onboarding_dismissed_at`). `OnboardingSteps` 순수 조립(단위 5/5). 홈 상단 "시작하기" 카드(완료=취소선·미완료=딥링크, all_done·dismissed면 숨김). Track B 첫 라운드 |
 
 ---
 
@@ -162,7 +163,7 @@
 
 1. **Flutter 앱 따라잡기** — 또는 **명시적으로 접기**. 지금처럼 절반만 살아있는 게 제일 나쁘다
    - 기획서 2.1도 "Next.js 우선, Flutter는 검증 후 전환"이라 접는 것도 정합적인 선택
-2. **온보딩** — 지금은 시드 계정 하나로 도는 구조
+2. ✅ **온보딩** — 홈 "시작하기" 체크리스트(관심종목·알림·모의투자·조건검색, 실제 상태 파생)로 신규 유저를 핵심 기능에 안내(R48). 남은 것: 가입 직후 웰컴/투어 심화는 후속
 3. **데이터 출처·지연 표시 강화** — 스텁 폴백이 조용히 일어나는 걸 사용자가 알 수 있어야 함
 4. **엣지케이스** — 나 혼자 쓰는 경로만 밟고 있어서 잠재된 것들
 

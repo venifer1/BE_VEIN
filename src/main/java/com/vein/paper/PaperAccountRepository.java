@@ -10,4 +10,6 @@ public interface PaperAccountRepository extends JpaRepository<PaperAccount, Long
     Optional<PaperAccount> findTopByUserIdAndStatusOrderBySimulationRunDesc(Long userId, String status);
 
     List<PaperAccount> findByUserIdAndStatus(Long userId, String status);
+
+    boolean existsByUserId(Long userId);
 }

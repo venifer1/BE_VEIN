@@ -13,6 +13,8 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
 
     List<Alert> findByUserIdOrderByCreatedAtDesc(Long userId);
 
+    boolean existsByUserId(Long userId);
+
     List<Alert> findByEnabledTrue();
 
     List<Alert> findByInstrumentIdAndSignalTypeAndEnabledTrue(Long instrumentId, SignalType signalType);

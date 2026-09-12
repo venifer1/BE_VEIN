@@ -8,6 +8,8 @@ public interface WatchlistItemRepository extends JpaRepository<WatchlistItem, Wa
 
     List<WatchlistItem> findByIdWatchlistId(Long watchlistId);
 
+    long countByIdWatchlistId(Long watchlistId);
+
     boolean existsById(WatchlistItemId id);
 
     void deleteById(WatchlistItemId id);
