@@ -138,6 +138,7 @@
 | R68 | **한도 게이트 중앙화 + 테스트** (Track C 품질) — 알림·저장식 FREE 게이트의 인라인 중복(`limit>=0 && count>=limit`)을 `Entitlements.overLimit` 순수 헬퍼로 통합(경계 회귀 방지). 단위 8/8. 동작 동일(4번째 402 회귀 확인) |
 | R69 | **스캐너 "관심종목만" 빈결과 안내** (FE, R61 후속) — 관심종목만 켰는데 결과 없으면 "관심종목 신호가 없습니다·종목 등록/필터 끄기" 전용 안내. 백엔드 무변경 |
 | R70 | **알림 분류 마커 공유 상수화** (품질) — 다이제스트 카테고리 마커("Scanner match:"·"Liquidation spike")가 생성부/분류부에 중복돼 드리프트 위험이던 것을 `NotificationDigest` 공유 상수로 통합(ConditionScanner·Liquidation·Digest 참조). 단위 8/8, 동작 동일 |
+| R71 | **오프라인 데모 mock landing 갭 수정** (Track B) — queries↔mockAdapter 정적 대조로 누락 발견: `/auth/signup`·`/public/reports/weekly` mock 핸들러 없어 mock 모드 랜딩(리포트·가입) 깨짐. 둘 다 추가, 실제 mock 빌드(포트 3100)로 랜딩·가입·로그인 검증. 백엔드 무변경 |
 
 ---
 
