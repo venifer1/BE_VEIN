@@ -122,6 +122,7 @@
 | R52 | **Track C 착수: 구독 티어 + 엔타이틀먼트** — V28 `users.tier`(FREE/PRO). `com.vein.billing`: `Entitlements`(순수 티어→한도), `GET /me/entitlements`, 게이트 1개(FREE 저장식 3개 초과 시 402 PLAN_LIMIT_EXCEEDED). 설정 "구독" 카드. **결제 연동·기능제한 전면적용은 후속**. 단위 5/5 |
 | R53 | **저가-이탈 무효화 완화 버퍼** (사용자 요청) — ABC(A 저점)·TOP(B 저점) 무효화가 1틱만 깨도 죽던 것을, `low < 기준선×(1−buffer)`일 때만 무효로 완화(꼬리/노이즈 흡수). `vein.signal.invalidation-buffer-pct` 기본 3%(env로 조정). 순수 `breaches()` 단위 5/5. FE 무변경 |
 | R54 | **스캐너 기본 활성 신호만** (UI 감사) — 스캐너 목록이 상태 무필터라 만료 신호가 상단 노이즈이던 것을, `GET /signals?active_only=` 추가 + 스캐너 기본 활성만(DETECTED/NEAR_COMPLETION), "만료 포함" 토글로 전체 노출. API 하위호환(기본 false). mock 패리티 |
+| R55 | **UI 감사 후속 정리** (FE) — 전 화면 점검(화면+코드) 후 실수정: 모의 초기잔액 천단위 콤마+한글단위 힌트, 신호 strip "표본 부족" 경고(표본<20), 파괴적 확인(조건검색식 삭제·admin 잠금). 대부분 화면은 이미 깔끔함을 확인(파생 빈박스는 로딩 스켈레톤 오탐). 백엔드 무변경 |
 
 ---
 
