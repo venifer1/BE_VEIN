@@ -15,9 +15,10 @@ public final class NotificationDigestDto {
     /**
      * {@code GET /api/v1/notifications/digest} body. {@code windowHours} 창 안에서 집계.
      * {@code categories}는 건수>0인 분류만, 고정 우선순위 순서. {@code recent}는 안읽은 최신
-     * 표본(최대 5). {@code summary}는 사람이 읽는 한 줄.
+     * 표본(최대 5). {@code released}는 조용한 시간(R46)에 보류됐다가 창 안에 방출된 건수(스풀링
+     * 방출 요약, R51). {@code summary}는 사람이 읽는 한 줄.
      */
-    public record Digest(int windowHours, String generatedAt, int total, int unread,
+    public record Digest(int windowHours, String generatedAt, int total, int unread, int released,
                          List<CategoryCount> categories, List<NotificationDto> recent, String summary) {
     }
 

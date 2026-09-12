@@ -88,7 +88,8 @@ public class NotificationService {
                         n.getBody(),
                         n.getStatus().name(),
                         n.getStatus() == NotificationStatus.READ,
-                        n.getCreatedAt()))
+                        n.getCreatedAt(),
+                        n.getHeldUntil()))
                 .toList();
         return NotificationDigest.summarize(entries, window, now);
     }

@@ -20,7 +20,12 @@ class NotificationDigestTest {
 
     private static Entry entry(String id, Long signalId, String title, boolean read, int minAgo) {
         return new Entry(id, signalId, title, "body", read ? "READ" : "CREATED", read,
-                NOW.minusSeconds(minAgo * 60L));
+                NOW.minusSeconds(minAgo * 60L), null);
+    }
+
+    private static Entry heldEntry(String id, Long signalId, String title, boolean read, int minAgo) {
+        return new Entry(id, signalId, title, "body", read ? "READ" : "CREATED", read,
+                NOW.minusSeconds(minAgo * 60L), NOW.minusSeconds(minAgo * 30L));
     }
 
     @Test
@@ -45,6 +50,7 @@ class NotificationDigestTest {
 
         assertThat(d.total()).isEqualTo(5);
         assertThat(d.unread()).isEqualTo(3);
+        assertThat(d.released()).isZero();
         assertThat(d.windowHours()).isEqualTo(24);
         // 고정 우선순위: SIGNAL, SCANNER, LIQUIDATION, SYSTEM
         assertThat(d.categories()).extracting(CategoryCount::category)
@@ -72,6 +78,20 @@ class NotificationDigestTest {
         assertThat(d.recent()).extracting(NotificationDto::id)
                 .containsExactly("a", "c", "d", "e", "f");
         assertThat(d.recent().get(0).readAt()).isNull();
+    }
+
+    @Test
+    void releasedCountsHeldNotificationsThatBecameVisible() {
+        // 2 held(방출됨) + 1 일반 → released=2
+        List<Entry> entries = List.of(
+                heldEntry("1", 10L, "s1 signal", false, 5),
+                heldEntry("2", null, "Scanner match: x", true, 10),
+                entry("3", 11L, "s3 signal", false, 15));
+
+        Digest d = NotificationDigest.summarize(entries, 24, NOW);
+
+        assertThat(d.total()).isEqualTo(3);
+        assertThat(d.released()).isEqualTo(2);
     }
 
     @Test

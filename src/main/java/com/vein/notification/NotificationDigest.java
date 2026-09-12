@@ -40,7 +40,7 @@ public final class NotificationDigest {
      * 생성 시각. 목록은 <b>최신순(내림차순)</b>으로 넘어온다고 가정한다.
      */
     public record Entry(String id, Long signalId, String title, String body, String status,
-                        boolean read, Instant createdAt) {
+                        boolean read, Instant createdAt, Instant heldUntil) {
     }
 
     /** 창({@code windowHours}) 안의 알림들을 분류·집계하고 요약 문장을 만든다. */
@@ -48,11 +48,15 @@ public final class NotificationDigest {
         List<Entry> rows = entries == null ? List.of() : entries;
         int total = rows.size();
         int unread = 0;
+        int released = 0;
 
         // 분류별 (total, unread) 누적.
         Map<String, int[]> byCategory = new LinkedHashMap<>();
         List<NotificationDto> recent = new ArrayList<>();
         for (Entry e : rows) {
+            if (e.heldUntil() != null) {
+                released++;   // 조용한 시간에 보류됐다 창 안에 방출됨(findSince가 이미 held<=now만 통과)
+            }
             if (!e.read()) {
                 unread++;
                 if (recent.size() < RECENT_LIMIT) {
@@ -76,7 +80,7 @@ public final class NotificationDigest {
         }
 
         String summary = summary(windowHours, total, unread, categories);
-        return new Digest(windowHours, TimeUtil.toIso(now), total, unread, categories, recent, summary);
+        return new Digest(windowHours, TimeUtil.toIso(now), total, unread, released, categories, recent, summary);
     }
 
     /** signalId(구조) + 제목 마커로 분류. */
