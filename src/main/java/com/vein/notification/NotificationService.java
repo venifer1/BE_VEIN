@@ -49,8 +49,9 @@ public class NotificationService {
             cursorId = decoded.id();
         }
 
+        Instant now = Instant.now();
         List<Notification> rows = notificationRepository.findPage(
-                userId, unreadOnly, cursorTs, cursorId, PageRequest.of(0, PAGE_SIZE + 1));
+                userId, unreadOnly, now, cursorTs, cursorId, PageRequest.of(0, PAGE_SIZE + 1));
 
         String nextCursor = null;
         if (rows.size() > PAGE_SIZE) {
@@ -60,7 +61,7 @@ public class NotificationService {
         }
 
         List<NotificationDto> items = rows.stream().map(NotificationDto::from).toList();
-        int unreadCount = (int) notificationRepository.countByUserIdAndStatusNot(userId, NotificationStatus.READ);
+        int unreadCount = (int) notificationRepository.countActiveUnread(userId, now);
         return new NotificationListResult(items, nextCursor, unreadCount);
     }
 
@@ -78,7 +79,7 @@ public class NotificationService {
         Instant now = Instant.now();
         Instant since = now.minus(Duration.ofHours(window));
         List<Notification> rows = notificationRepository.findSince(
-                userId, since, PageRequest.of(0, DIGEST_ROW_CAP));
+                userId, since, now, PageRequest.of(0, DIGEST_ROW_CAP));
         List<NotificationDigest.Entry> entries = rows.stream()
                 .map(n -> new NotificationDigest.Entry(
                         String.valueOf(n.getId()),
@@ -128,6 +129,17 @@ public class NotificationService {
      * already exists.
      */
     public Notification createInApp(Long userId, Long alertId, Long signalId, String title, String body) {
+        return createInApp(userId, alertId, signalId, title, body, null);
+    }
+
+    /**
+     * As {@link #createInApp(Long, Long, Long, String, String)} but with optional 스풀링(R46):
+     * {@code heldUntil != null}이면 그 시각까지 보류돼 읽기 모델에서 제외되고 웹푸시도 나가지
+     * 않는다(창이 끝나면 다음 폴링에 자연히 노출·핑). 보류 알림도 정상 알림이므로 IN_APP 전달
+     * 시도는 기록한다(생성 사실).
+     */
+    public Notification createInApp(Long userId, Long alertId, Long signalId, String title, String body,
+                                    Instant heldUntil) {
         Notification notification = Notification.builder()
                 .userId(userId)
                 .alertId(alertId)
@@ -135,6 +147,7 @@ public class NotificationService {
                 .status(NotificationStatus.CREATED)
                 .title(title)
                 .body(body)
+                .heldUntil(heldUntil)
                 .build();
         try {
             Notification saved = notificationRepository.saveAndFlush(notification);
@@ -144,7 +157,9 @@ public class NotificationService {
                     .status("OK")
                     .attemptNo(1)
                     .build());
-            webPushService.deliver(saved);
+            if (heldUntil == null) {
+                webPushService.deliver(saved);
+            }
             return saved;
         } catch (DataIntegrityViolationException e) {
             // Duplicate (user_id, alert_id, signal_id) — dedup, idempotent no-op.

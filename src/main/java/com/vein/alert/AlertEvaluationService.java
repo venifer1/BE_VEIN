@@ -64,13 +64,12 @@ public class AlertEvaluationService {
             if (alert.inCooldown(now)) {
                 continue;
             }
-            // 조용한 시간(R42): 이 창에는 새 알림을 만들지 않는다. 쿨다운도 진전시키지 않아
-            // 창이 끝난 뒤 후속 신호가 정상적으로 알림을 낸다.
-            if (notificationPrefService.isQuietNow(alert.getUserId(), now)) {
-                continue;
-            }
+            // 스풀링(R46): 조용한 시간(R42)에는 알림을 드롭하지 않고 창 종료 시각까지 보류한다.
+            // 보류 알림은 읽기 모델에서 제외돼 핑/배지가 뜨지 않고, 창이 끝나면 자연히 노출된다
+            // (R42의 드롭+후속 재발화와 달리 놓치지 않는다). 보류도 실제 알림이므로 쿨다운은 진전.
+            Instant heldUntil = notificationPrefService.quietWindowEnd(alert.getUserId(), now);
             Notification created = notificationService.createInApp(
-                    alert.getUserId(), alert.getId(), signal.getId(), title, body);
+                    alert.getUserId(), alert.getId(), signal.getId(), title, body, heldUntil);
             if (created != null) {
                 alert.setLastTriggeredAt(now);
                 alertRepository.save(alert);

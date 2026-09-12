@@ -2,6 +2,7 @@ package com.vein.notification;
 
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +55,42 @@ public class NotificationPrefService {
         } catch (RuntimeException e) {
             return false;
         }
+    }
+
+    /**
+     * 스풀링(R46): {@code now}가 사용자의 활성 조용한 시간 창 안이면 그 창이 끝나는 순간(Instant)을,
+     * 아니면 null을 반환한다. 보류 알림의 {@code held_until}로 쓴다. 절대 throw하지 않는다.
+     */
+    @Transactional(readOnly = true)
+    public Instant quietWindowEnd(Long userId, Instant now) {
+        if (userId == null) {
+            return null;
+        }
+        try {
+            NotificationPref pref = repository.findById(userId).orElse(null);
+            if (pref == null || !pref.isQuietEnabled()) {
+                return null;
+            }
+            return windowEnd(now, pref.getQuietStartHour(), pref.getQuietEndHour());
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    /**
+     * {@code now}(KST)가 창 [start,end) 안이면 그 창이 끝나는 다음 {@code end}:00 KST 순간을,
+     * 밖이면 null을 반환. 자정을 넘는 창(start&gt;end)도 지원. 순수 함수(테스트 용이).
+     */
+    static Instant windowEnd(Instant now, int start, int end) {
+        ZonedDateTime kstNow = now.atZone(KST);
+        if (!inWindow(kstNow.getHour(), start, end)) {
+            return null;
+        }
+        ZonedDateTime candidate = kstNow.toLocalDate().atTime(end % 24, 0).atZone(KST);
+        if (!candidate.isAfter(kstNow)) {
+            candidate = candidate.plusDays(1);
+        }
+        return candidate.toInstant();
     }
 
     /** start==end → 창 없음; start<end → [start,end); start>end → 자정을 넘는 창. */

@@ -59,6 +59,13 @@ public class Notification {
     @Column(name = "read_at")
     private Instant readAt;
 
+    /**
+     * 스풀링(R46): 조용한 시간에 도착한 알림의 보류 만료 시각. 이 시각 전까지는 읽기 모델에서
+     * 제외돼 핑/배지가 뜨지 않고, 지나면 자연히 노출된다. NULL이면 보류 아님(즉시 활성).
+     */
+    @Column(name = "held_until")
+    private Instant heldUntil;
+
     /** Mark this notification as read at the given instant. */
     public void markRead(Instant now) {
         this.status = NotificationStatus.READ;
