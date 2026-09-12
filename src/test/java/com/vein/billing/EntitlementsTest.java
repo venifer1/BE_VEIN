@@ -44,6 +44,15 @@ class EntitlementsTest {
     }
 
     @Test
+    void overLimitBoundary() {
+        assertThat(Entitlements.overLimit(-1, 9999)).isFalse();  // 무제한
+        assertThat(Entitlements.overLimit(3, 2)).isFalse();      // 여유
+        assertThat(Entitlements.overLimit(3, 3)).isTrue();       // 정확히 한도
+        assertThat(Entitlements.overLimit(3, 4)).isTrue();       // 초과
+        assertThat(Entitlements.overLimit(0, 0)).isTrue();       // 한도 0
+    }
+
+    @Test
     void forTierReflectsUsageCounts() {
         Status s = Entitlements.forTier("FREE", 2, 5);
         var rules = s.features().stream()

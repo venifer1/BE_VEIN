@@ -42,6 +42,11 @@ public final class Entitlements {
         return isPro(tier) ? -1 : FREE_ALERTS;
     }
 
+    /** 한도 초과 판정(게이트 공유). 무제한(-1)이면 항상 false, 아니면 현재 수 ≥ 한도. */
+    public static boolean overLimit(int limit, long currentCount) {
+        return limit >= 0 && currentCount >= limit;
+    }
+
     /** 사용량 없이(0) 한도만. */
     public static Status forTier(String tier) {
         return forTier(tier, 0, 0);

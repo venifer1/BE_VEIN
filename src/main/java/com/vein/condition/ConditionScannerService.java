@@ -29,6 +29,7 @@ import com.vein.condition.ConditionDto.SaveRequest;
 import com.vein.indicator.Indicators;
 import com.vein.instrument.Instrument;
 import com.vein.instrument.InstrumentRepository;
+import com.vein.billing.Entitlements;
 import com.vein.billing.EntitlementsService;
 import com.vein.market.candle.Candle;
 import com.vein.market.candle.CandleRepository;
@@ -115,7 +116,7 @@ public class ConditionScannerService {
         }
         // 구독 게이트(R52, Track C): FREE는 저장식 개수 제한. PRO(-1)는 무제한.
         int limit = entitlementsService.scannerRuleLimit(userId);
-        if (limit >= 0 && ruleRepository.countByUserId(userId) >= limit) {
+        if (Entitlements.overLimit(limit, ruleRepository.countByUserId(userId))) {
             throw new ApiException(ErrorCode.PLAN_LIMIT_EXCEEDED,
                     "무료 플랜은 조건검색식을 최대 " + limit + "개까지 저장할 수 있어요. PRO로 업그레이드하면 무제한입니다.");
         }
