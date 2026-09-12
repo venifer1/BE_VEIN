@@ -9,7 +9,7 @@
 - 목록 cursor 기반 최신순, `page_size` 기본 20·최대 100.
 - 성공 `{data, meta:{trace_id, freshness, next_cursor?}}`, 오류 `{error:{code,message,trace_id,field_errors}}`.
 - `freshness`: `FRESH | DELAYED` (collected_at 경과 > timeframe×2 → DELAYED).
-- **클라이언트 오류는 4xx로 정규화(R43)**: 잘못된 파라미터 타입/enum·누락 파라미터·바디 검증 실패·깨진 JSON → `400 VALIDATION_ERROR`(+field_errors), 잘못된 메서드 → `405 METHOD_NOT_ALLOWED`. 500은 실제 서버 오류에만.
+- **클라이언트 오류는 4xx로 정규화(R43·R49·R78)**: 잘못된 파라미터 타입/enum·누락 파라미터·바디 검증 실패·깨진 JSON → `400 VALIDATION_ERROR`(+field_errors), 잘못된 메서드 → `405 METHOD_NOT_ALLOWED`, 인증 통과 후 미매핑 경로 → `404 NOT_FOUND`(R49), 권한 부족(비관리자의 `/admin/**` 등) → `403 FORBIDDEN`(R78). 500은 실제 서버 오류에만(정규화된 4xx는 ERROR 로그 미출력).
 
 ## enum (확장)
 - **market**: `CRYPTO | US | KOSPI | KOSDAQ`
@@ -50,11 +50,13 @@
 ## 4. 스캐너 (패턴 3종 통합) — `signal`/`scanner`/`scalp`
 | Method | Path | 설명 |
 |---|---|---|
-| GET | `/signals` | `?type=ABC\|TOP\|IMALOL & market & timeframe & instrument_id & watchlist_only & status & near_only & active_only & cursor`. **`active_only=true`(R54)**면 DETECTED/NEAR_COMPLETION만(만료·무효 숨김). 기본 false(하위호환). 카드: type, market, instrument, timeframe, status, score, current_price, **c_target(ABC/TOP)**, pivots 요약(0/A/B 일자), detected_at, freshness |
+| GET | `/signals` | `?type=ABC\|TOP\|IMALOL & market & timeframe & instrument_id & watchlist_only & status & near_only & active_only & cursor`. **`active_only=true`(R54)**면 DETECTED/NEAR_COMPLETION만(만료·무효 숨김). 기본 false(하위호환). 카드: type, market, instrument, timeframe, status, score, current_price, **c_target(ABC/TOP=C목표가·IMALOL=C예상가/projectedClose, R80)**, pivots 요약(0/A/B 일자), detected_at, freshness |
 | GET | `/signals/top` | 오늘의 주목 신호(R41): `?market=&limit=`(기본 10·최대 30). 활성 신호(DETECTED/NEAR_COMPLETION) Pattern Score 상위. 카드 형식은 `/signals`와 동일 |
-| GET | `/signals/{id}` | evidence(피벗/추세선/볼린저/매치박스), invalidation, c_target, chart_range, algorithm_version, **event_risk(R39, nullable)** |
+| GET | `/signals/{id}` | evidence(피벗/추세선/볼린저/매치박스), invalidation, c_target, chart_range, algorithm_version, **event_risk(R39, nullable)**, **expires_at(R85, nullable — 유효기간/만료 시각)** |
 | GET | `/signals/{id}/explain` | Pattern Score(완성도30·거래량20·추세20·변동성10·뉴스20), 규칙 기반 근거·위험·다음 확인, Risk Guard(PASS/WARN/BLOCK), 1d 성과 표본 기반 Confidence |
-| GET/POST | `/explain/{signalId}/feedback` | Explain 유용성 집계·내 평가 조회 / `{helpful,reason?}` 사용자별 평가 upsert. reason=`UNCLEAR|INACCURATE|MISSING_RISK|TOO_COMPLEX|OTHER` |
+| GET | `/signals/{id}/performance` | 이 신호의 탐지 후 실현 성과(§31): `{signal_id, detected_price, detected_at, horizons[]{horizon(1h\|4h\|1d\|3d\|7d), price, return_pct, mfe_pct, mae_pct, evaluated_at}}`. `horizons`는 경과·계산된 것만(너무 신선하면 빈 배열, 500 없음) |
+| GET | `/signals/performance/summary` | 패턴 유형별 과거 실측 집계(해자): `?type&market&timeframe&horizon(기본 1d)&from&to&bucket=MONTH`. `rows[]{type,market,timeframe,bucket?(yyyy-MM, MONTH일 때만),horizon,sample_size,hit_rate,avg_return_pct,median_return_pct,avg_mfe_pct,avg_mae_pct}`(표본순). `hit_rate`=수익>0 표본 비율. 스캐너 성과 스트립·**신호 상세 "이 패턴 과거 성과" base-rate(R86)**·Explain Confidence가 사용. from/to는 detected_at 반개구간, 미매칭 시 빈 배열 |
+| GET/POST | `/explain/{signalId}/feedback` | Explain 유용성 집계·내 평가 조회 / `{helpful,reason?}` 사용자별 평가 upsert. **`helpful`은 필수(Boolean) — 누락/null이면 `400`(R79)**. reason=`UNCLEAR|INACCURATE|MISSING_RISK|TOO_COMPLEX|OTHER` |
 | GET | `/scalp/ranking` | 틱띄기: `?limit=` 업비트 24h 거래대금 상위 마켓 스캘핑 점수 랭킹(symbol, scalp_score, spread_ticks, tps, micro_vol, ob_imbalance, wall_state). 서버 WS 수집값 폴링 |
 | GET | `/scalp/{symbol}` | 상세: 최근 체결 흐름(매수/매도 비율), 호가 상위레벨, 벽/취소의심 |
 | POST | `/scanner/run` | 조건검색 즉시 실행 `{market,timeframe,logic,conditions[]}`. v1 지표: RSI, VOLUME_RATIO, PRICE→MA20, MA5→MA20, MACD_HISTOGRAM |
@@ -63,6 +65,8 @@
 | GET | `/scanner/rules/{id}/history` | 저장식 최근 실행 이력 |
 
 스캐너 파라미터(서버 고정, 노출용): ABC `MIN_A_DROP_PCT=0.20, MIN_B_RETRACE=[0.236,0.886], LOCAL_WIN=5, SEARCH_WINDOW=100, MIN_0_PROMINENCE=0.10, STRICT_WAVE=true, MAX_PATTERNS=3`. 재스캔: 주/3일/일 4h마다, 4h/1h/15m 각 주기.
+
+- **무효화 완충(R53·R77)** — `GET /signals/{id}`의 `invalidation` = `{rule, price, buffer_pct, effective_price}`. 저가-이탈 규칙(ABC A저점·TOP B저점)은 `price`(기준선)를 1틱만 깨도 죽지 않고 **`effective_price = price × (1 − buffer_pct)`** 아래로 저가가 내려가야 무효 처리(노이즈/꼬리 흡수). `buffer_pct`는 `vein.signal.invalidation-buffer-pct`(기본 0.03) 파생. 완충 없는 규칙은 `buffer_pct`/`effective_price` 둘 다 null. FE 카드는 R:R 거리를 `effective_price` 우선으로 계산.
 
 ## 5. 속보 — `news`
 | GET | `/news` | `?source=TELEGRAM\|BLOOMBERG & cursor` 항목(source, title, body, url, published_at, is_new). 서버가 텔레그램(coinnesskr)+Bloomberg RSS 수집·중계, 앱은 읽기 |

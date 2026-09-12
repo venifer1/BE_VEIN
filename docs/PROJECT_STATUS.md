@@ -154,6 +154,7 @@
 | R84 | **신호 상세 액션 시장별 현실화** (FE) — "다음 액션"이 주식에도 FUTURES+레버리지+롱/숏을 하드코딩하던 것을(비현실적 "AMZN 3배 숏"), `market==="CRYPTO"` 분기로 코인=선물 롱/숏+레버리지, 주식=현물 매수(SPOT BUY, 레버리지·숏 숨김+안내)로 수정. 백엔드 무변경. typecheck/build/smoke 0에러, 주식 상세 단일 현물매수 렌더 확인, `POST /paper/orders SPOT`(AMZN)→201 FILLED(leverage 1) 실측 후 리셋 원복 |
 | R85 | **신호 상세 유효기간(만료 D-day) 노출** (BE+FE) — 활성 신호가 언제까지 유효한지 안 보이던 것을, `SignalDetailDto.expiresAt` 추가(detail()에서 채움)+상세 헤더에 "유효기간 {일시} (D-N)" 라인(임박 경고색, 만료시 "만료됨·갱신대기"). setup 잔여 유효기간을 진입 판단에 제공. mock도 expires_at 파리티(detected+30d). BE test 그린, 실측 `/signals/88`={expires 2026-09-14, D-2}, FE build/smoke 0에러 |
 | R86 | **신호 상세에 "이 패턴 과거 성과(base rate)" 노출** (FE) — 성과 패널이 이 신호 자체 실현수익만 보여줘 갓 탐지된 신호(판단이 가장 필요한 순간)엔 "측정 대기"만 뜨던 것을, 성과 카드 최상단에 같은 유형(type·market·timeframe) 과거 `표본 N·1일 적중률·평균`을 `/signals/performance/summary`(스캐너 스트립과 동일 데이터) 재사용으로 노출(표본<20 "참고만" 배지). 해자(실측 적중률)를 개별 신호 판단 지점에서 바로 확인. 신규 API 없음, mock 패리티. typecheck/build/mock smoke 0에러, 상세(ABC·CRYPTO·4h) 표본42·61.9%·+3.20% 렌더 확인 |
+| R87 | **API_CONTRACT.md 동기화** (문서) — R74(→R73) 이후 R77~R86 계약 델타 미반영분을 문서↔코드 정적 대조로 반영: **누락 엔드포인트 2개**(`/signals/{id}/performance`·`/signals/performance/summary` — 해자, FE가 쓰는데 계약서에 없었음) 추가, R77 무효화 완충(`invalidation{rule,price,buffer_pct,effective_price}`), R85 `expires_at`, R79 `helpful` 필수(400), R80 IMALOL c_target, R49/R78 에러 정규화(404/403). 코드 무변경 |
 
 ---
 
