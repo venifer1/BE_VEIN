@@ -124,9 +124,32 @@ public class SignalStatusTransitionService {
         if (low == null || invalidationPrice == null) {
             return false;
         }
+        return low.compareTo(thresholdPrice(invalidationPrice, bufferPct)) < 0;
+    }
+
+    /** 임계선 = 기준선 × (1 − buffer). {@code breaches}와 실질가 노출이 공유하는 단일 공식. */
+    static BigDecimal thresholdPrice(BigDecimal invalidationPrice, BigDecimal bufferPct) {
         BigDecimal buffer = (bufferPct == null || bufferPct.signum() < 0) ? BigDecimal.ZERO : bufferPct;
-        BigDecimal threshold = invalidationPrice.multiply(BigDecimal.ONE.subtract(buffer));
-        return low.compareTo(threshold) < 0;
+        return invalidationPrice.multiply(BigDecimal.ONE.subtract(buffer));
+    }
+
+    /** 저가-이탈 무효화 완충 비율(R53). 0.03 = 3%. */
+    public BigDecimal invalidationBufferPct() {
+        return invalidationBufferPct;
+    }
+
+    /**
+     * 실제 무효화가 발동하는 임계가(기준선 × (1 − buffer)). 저가-이탈 규칙(ABC A저점·TOP B저점)이
+     * 아니거나 기준선이 없으면 {@code null} — 완충 개념이 적용되지 않는 규칙엔 실질가가 없다.
+     */
+    public BigDecimal effectiveInvalidationPrice(PatternSignal signal) {
+        String rule = signal.getInvalidationRule();
+        boolean lowBreakRule = AbcInvalidation.A_LOW_BREAK.equals(rule)
+                || AbcInvalidation.B_LOW_BREAK.equals(rule);
+        if (!lowBreakRule || signal.getInvalidationPrice() == null) {
+            return null;
+        }
+        return thresholdPrice(signal.getInvalidationPrice(), invalidationBufferPct);
     }
 
     private static final class AbcInvalidation {

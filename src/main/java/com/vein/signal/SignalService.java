@@ -39,17 +39,20 @@ public class SignalService {
     private final InstrumentRepository instrumentRepository;
     private final WatchlistService watchlistService;
     private final EventRiskService eventRiskService;
+    private final SignalStatusTransitionService transitionService;
 
     public SignalService(PatternSignalRepository signalRepository,
                          SignalEvidenceRepository evidenceRepository,
                          InstrumentRepository instrumentRepository,
                          WatchlistService watchlistService,
-                         EventRiskService eventRiskService) {
+                         EventRiskService eventRiskService,
+                         SignalStatusTransitionService transitionService) {
         this.signalRepository = signalRepository;
         this.evidenceRepository = evidenceRepository;
         this.instrumentRepository = instrumentRepository;
         this.watchlistService = watchlistService;
         this.eventRiskService = eventRiskService;
+        this.transitionService = transitionService;
     }
 
     /** Result of a signal list query. */
@@ -143,10 +146,14 @@ public class SignalService {
 
         InvalidationDto invalidation = null;
         if (signal.getInvalidationRule() != null) {
+            // 저가-이탈 규칙엔 R53 완충이 붙어 실제 발동가는 기준선보다 낮다 — 실질가·완충을 함께 노출.
+            java.math.BigDecimal effective = transitionService.effectiveInvalidationPrice(signal);
             invalidation = new InvalidationDto(
                     signal.getInvalidationRule(),
                     signal.getInvalidationPrice() == null
-                            ? null : signal.getInvalidationPrice().toPlainString());
+                            ? null : signal.getInvalidationPrice().toPlainString(),
+                    effective == null ? null : transitionService.invalidationBufferPct().toPlainString(),
+                    effective == null ? null : effective.toPlainString());
         }
 
         ChartRange chartRange = chartRangeOf(ev);

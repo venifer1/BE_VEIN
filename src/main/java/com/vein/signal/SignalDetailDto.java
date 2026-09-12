@@ -35,8 +35,12 @@ public record SignalDetailDto(
     public record EvidenceDto(String type, String candleTime, String price, String payload) {
     }
 
-    /** Invalidation rule and trigger price. */
-    public record InvalidationDto(String rule, String price) {
+    /**
+     * Invalidation rule and trigger price. For low-break rules (ABC/TOP) the raw {@code price}
+     * is the anchor line, but invalidation only fires below {@code effectivePrice}
+     * (= price × (1 − bufferPct), R53 완충). Both null for rules without a buffer.
+     */
+    public record InvalidationDto(String rule, String price, String bufferPct, String effectivePrice) {
     }
 
     /** Suggested chart overlay window (first/last evidence candle time). */

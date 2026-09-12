@@ -46,4 +46,15 @@ class SignalLowBreakTest {
         // 음수 버퍼는 0으로 취급 → strict below
         assertThat(SignalStatusTransitionService.breaches(new BigDecimal("99"), A, new BigDecimal("-0.1"))).isTrue();
     }
+
+    @Test
+    void thresholdPriceIsLineMinusBuffer() {
+        // 실질 무효화가 = 기준선 × (1 − buffer). FE가 이 값을 "실질 무효화가"로 노출(R77).
+        assertThat(SignalStatusTransitionService.thresholdPrice(A, BUF3)).isEqualByComparingTo("97");
+        // 버퍼 0이면 기준선 그대로
+        assertThat(SignalStatusTransitionService.thresholdPrice(A, BigDecimal.ZERO)).isEqualByComparingTo("100");
+        // null/음수 버퍼는 0으로 취급 → 기준선 그대로
+        assertThat(SignalStatusTransitionService.thresholdPrice(A, null)).isEqualByComparingTo("100");
+        assertThat(SignalStatusTransitionService.thresholdPrice(A, new BigDecimal("-0.1"))).isEqualByComparingTo("100");
+    }
 }

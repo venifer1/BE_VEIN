@@ -144,6 +144,7 @@
 | R74 | **API_CONTRACT.md 동기화** (Track B 문서) — 단일 계약 문서에 R45~R73 누락 8개 그룹 반영: active_only·scanner 한도/simulate/history·alerts DELETE·notifications read-all/digest·onboarding·§10 구독/운영(entitlements·tier·by_tier). 문서↔실제 정적 대조로 검증 |
 | R75 | **조건검색 저장식 한도 선제 안내** (Track C UX) — FREE 3개 한도를 402 맞기 전에 표시: 조건검색 패널이 `/me/entitlements`로 `저장식 N/3` 배지·안내를 렌더, 한도 도달 시 저장 버튼 비활성+PRO 안내(→설정). 저장/삭제 시 entitlements 무효화로 설정 화면 사용량 동기화. FE 전용, 라이브 smoke 0에러 |
 | R76 | **알림 규칙 한도 선제 안내** (Track C UX, R75 후속) — 알림 생성 다이얼로그가 `/me/entitlements`의 `ALERTS` 한도(FREE 10)를 열릴 때 조회, `N/10` 안내 상시 노출·한도 도달 시 폼 대신 PRO 안내 화면으로 전환(402 원천 차단)+`PLAN_LIMIT_EXCEEDED` 친화 메시지 매핑. FE 전용, 라이브 smoke 0에러 |
+| R77 | **무효화 실질가(R53 완충) 노출** (BE+FE) — 신호 상세가 raw 기준선만 보여주던 걸, 실제 발동가(`effective_price`=기준선×(1−buffer))·완충률을 함께 노출. `SignalStatusTransitionService`에 `thresholdPrice`/`effectiveInvalidationPrice` 추출·`InvalidationDto` 확장, FE 카드에 "실질 무효화가(−3% 완충)"+설명, R:R 거리도 실질가 우선. `SignalLowBreakTest` 6/6, 실측 `/signals/275`={89.25→86.5725}, 라이브 smoke 0에러 |
 
 ---
 
