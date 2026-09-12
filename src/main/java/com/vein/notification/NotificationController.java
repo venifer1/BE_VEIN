@@ -68,6 +68,17 @@ public class NotificationController {
         return ApiResponse.of(notificationService.markRead(userId, id));
     }
 
+    @PostMapping("/read-all")
+    @Operation(summary = "Mark all active unread notifications as read")
+    public ApiResponse<MarkAllReadResult> markAllRead() {
+        Long userId = Long.parseLong(SecurityContextHolder.getContext().getAuthentication().getName());
+        return ApiResponse.of(new MarkAllReadResult(notificationService.markAllRead(userId)));
+    }
+
+    /** {@code POST /notifications/read-all} 결과: 읽음 처리된 건수. */
+    public record MarkAllReadResult(int updated) {
+    }
+
     @PostMapping("/{id}/deliveries/web-push")
     @Operation(summary = "Acknowledge browser display of a notification")
     public ApiResponse<Void> recordWebPushDelivery(@PathVariable Long id) {

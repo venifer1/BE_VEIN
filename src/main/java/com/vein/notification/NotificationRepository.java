@@ -54,6 +54,19 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
                                  @Param("now") Instant now,
                                  Pageable pageable);
 
+    /**
+     * 활성 안읽음을 일괄 읽음 처리(R63). 스풀링(R46) 보류 중(held_until > now)은 건드리지 않는다.
+     * 갱신 건수를 반환.
+     */
+    @Modifying
+    @Query("""
+            update Notification n set n.status = com.vein.notification.NotificationStatus.READ, n.readAt = :now
+            where n.userId = :userId
+              and n.status <> com.vein.notification.NotificationStatus.READ
+              and (n.heldUntil is null or n.heldUntil <= :now)
+            """)
+    int markAllRead(@Param("userId") Long userId, @Param("now") Instant now);
+
     /** 활성 안읽음 수. 스풀링(R46): 보류 중(held_until > now)은 세지 않는다. */
     @Query("""
             SELECT count(n) FROM Notification n

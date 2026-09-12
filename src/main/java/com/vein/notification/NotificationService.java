@@ -101,6 +101,11 @@ public class NotificationService {
         return NotificationDto.from(notificationRepository.save(n));
     }
 
+    /** 활성 안읽음을 모두 읽음 처리(R63). 갱신 건수 반환. */
+    public int markAllRead(Long userId) {
+        return notificationRepository.markAllRead(userId, Instant.now());
+    }
+
     /**
      * Record that the authenticated user's browser displayed this notification.
      * Repeated client acknowledgements are idempotent.
