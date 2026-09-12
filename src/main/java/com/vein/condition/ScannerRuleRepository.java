@@ -9,6 +9,8 @@ public interface ScannerRuleRepository extends JpaRepository<ScannerRule, Long> 
 
     boolean existsByUserId(Long userId);
 
+    long countByUserId(Long userId);
+
     List<ScannerRule> findByEnabledTrueOrderByCreatedAtAsc();
 
     long countByEnabledTrue();

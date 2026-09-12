@@ -33,6 +33,10 @@ public class User {
     @Column(nullable = false)
     private String role;
 
+    /** 구독 티어(R52, Track C). FREE|PRO. 신규 가입은 FREE. */
+    @Column(nullable = false, length = 16)
+    private String tier = "FREE";
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserStatus status;

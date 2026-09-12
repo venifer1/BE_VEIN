@@ -118,6 +118,8 @@
 | R48 | **온보딩 "시작하기" 체크리스트** (Track B #2) — `GET /me/onboarding`(관심종목·알림·모의투자·조건검색 스텝 완료를 **실제 데이터에서 파생** + 진행률) + `POST /dismiss`(V27 `users.onboarding_dismissed_at`). `OnboardingSteps` 순수 조립(단위 5/5). 홈 상단 "시작하기" 카드(완료=취소선·미완료=딥링크, all_done·dismissed면 숨김). Track B 첫 라운드 |
 | R49 | **엣지케이스: 미매핑 경로 404 정규화** (Track B #4) — 신규 유저 GET 훑기 실측으로 **인증 통과 미매핑 경로가 전부 500**(catch-all이 `NoResourceFoundException`을 삼켜 ERROR 로그+500)임을 발견. `GlobalExceptionHandler`에 `NoResourceFound/NoHandlerFound→404 NOT_FOUND` 핸들러 추가(R43 보완). 단위 6/6. 인접 엣지(bad path var·cursor·window)는 R43로 이미 견고함을 실측 확인 |
 | R50 | **데이터 출처 사용지점 노출** (Track B #3) — R40이 설정 한 곳에만 REAL/STUB를 보여주던 것을, 기존 `/system/status`를 사용 지점에서 읽어 확장. 전역 배너(`DataSourceBanner`, 사이드카 다운/STUB 시 상단 상시 "합성값" 경고+설정 링크) + 종목 상세 `MarketStubBadge`(미국 yfinance·국내 pykrx 합성 시 "합성" 배지). 프론트 전용, 백엔드/계약 무변경 |
+| R51 | **다이제스트 조용한시간 방출 요약** (Track A #3 후속) — R46 스풀링으로 보류됐다 방출된 건수를 R45 다이제스트에 `released`로 집계(읽기 시점, 스케줄러 없음). 설정 "알림 요약"에 "보류됐다 방금 도착 N건" 라인. 단위 6/6 |
+| R52 | **Track C 착수: 구독 티어 + 엔타이틀먼트** — V28 `users.tier`(FREE/PRO). `com.vein.billing`: `Entitlements`(순수 티어→한도), `GET /me/entitlements`, 게이트 1개(FREE 저장식 3개 초과 시 402 PLAN_LIMIT_EXCEEDED). 설정 "구독" 카드. **결제 연동·기능제한 전면적용은 후속**. 단위 5/5 |
 
 ---
 

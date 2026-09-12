@@ -29,6 +29,7 @@ import com.vein.condition.ConditionDto.SaveRequest;
 import com.vein.indicator.Indicators;
 import com.vein.instrument.Instrument;
 import com.vein.instrument.InstrumentRepository;
+import com.vein.billing.EntitlementsService;
 import com.vein.market.candle.Candle;
 import com.vein.market.candle.CandleRepository;
 import com.vein.notification.NotificationService;
@@ -49,6 +50,7 @@ public class ConditionScannerService {
     private final ScannerRuleRunRepository runRepository;
     private final ScannerRuleMatchRepository matchRepository;
     private final NotificationService notificationService;
+    private final EntitlementsService entitlementsService;
     private final ObjectMapper objectMapper;
 
     public ConditionScannerService(InstrumentRepository instrumentRepository,
@@ -57,6 +59,7 @@ public class ConditionScannerService {
                                    ScannerRuleRunRepository runRepository,
                                    ScannerRuleMatchRepository matchRepository,
                                    NotificationService notificationService,
+                                   EntitlementsService entitlementsService,
                                    ObjectMapper objectMapper) {
         this.instrumentRepository = instrumentRepository;
         this.candleRepository = candleRepository;
@@ -64,6 +67,7 @@ public class ConditionScannerService {
         this.runRepository = runRepository;
         this.matchRepository = matchRepository;
         this.notificationService = notificationService;
+        this.entitlementsService = entitlementsService;
         this.objectMapper = objectMapper;
     }
 
@@ -108,6 +112,12 @@ public class ConditionScannerService {
         if (request.name() == null || request.name().isBlank() || request.name().length() > 80) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR,
                     "name must be between 1 and 80 characters");
+        }
+        // 구독 게이트(R52, Track C): FREE는 저장식 개수 제한. PRO(-1)는 무제한.
+        int limit = entitlementsService.scannerRuleLimit(userId);
+        if (limit >= 0 && ruleRepository.countByUserId(userId) >= limit) {
+            throw new ApiException(ErrorCode.PLAN_LIMIT_EXCEEDED,
+                    "무료 플랜은 조건검색식을 최대 " + limit + "개까지 저장할 수 있어요. PRO로 업그레이드하면 무제한입니다.");
         }
         JsonNode conditions = objectMapper.valueToTree(validated.conditions());
         ScannerRule saved = ruleRepository.save(ScannerRule.create(

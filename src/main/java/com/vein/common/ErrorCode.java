@@ -48,6 +48,9 @@ public enum ErrorCode {
     // Public / rate limit
     RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "Too many requests"),
 
+    // Billing / entitlements
+    PLAN_LIMIT_EXCEEDED(HttpStatus.PAYMENT_REQUIRED, "Plan limit exceeded"),
+
     // Generic
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal error"),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "Validation error"),
