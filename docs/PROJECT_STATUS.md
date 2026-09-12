@@ -143,6 +143,7 @@
 | R73 | **오프라인 데모 mock 전화면 검증 + 로그인 역할 일관성** (Track B) — mock 빌드(포트 3100) full smoke 0에러(전 화면 mock 핸들러 온전). mock 로그인/`/me` 역할을 usr_1과 일치하게 SUPER_ADMIN으로 수정(데모에서 관리화면 노출). 백엔드 무변경 |
 | R74 | **API_CONTRACT.md 동기화** (Track B 문서) — 단일 계약 문서에 R45~R73 누락 8개 그룹 반영: active_only·scanner 한도/simulate/history·alerts DELETE·notifications read-all/digest·onboarding·§10 구독/운영(entitlements·tier·by_tier). 문서↔실제 정적 대조로 검증 |
 | R75 | **조건검색 저장식 한도 선제 안내** (Track C UX) — FREE 3개 한도를 402 맞기 전에 표시: 조건검색 패널이 `/me/entitlements`로 `저장식 N/3` 배지·안내를 렌더, 한도 도달 시 저장 버튼 비활성+PRO 안내(→설정). 저장/삭제 시 entitlements 무효화로 설정 화면 사용량 동기화. FE 전용, 라이브 smoke 0에러 |
+| R76 | **알림 규칙 한도 선제 안내** (Track C UX, R75 후속) — 알림 생성 다이얼로그가 `/me/entitlements`의 `ALERTS` 한도(FREE 10)를 열릴 때 조회, `N/10` 안내 상시 노출·한도 도달 시 폼 대신 PRO 안내 화면으로 전환(402 원천 차단)+`PLAN_LIMIT_EXCEEDED` 친화 메시지 매핑. FE 전용, 라이브 smoke 0에러 |
 
 ---
 
