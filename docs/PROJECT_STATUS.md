@@ -151,6 +151,7 @@
 | R81 | **홈 주목신호 종목별 dedup** (BE, 큐레이션 품질) — 실화면 점검에서 `/signals/top`이 같은 종목을 타임프레임만 달리해(1w·3d 동일 IMALOL) 중복 노출함을 발견(6칸에 WBA 2번=유니크 5). `SignalService.top()`에 종목별 최상위 1건만 남기는 `dedupeByInstrument`(넉넉히 fetch 후 dedup) 추가. 정렬·필터·계약 무변경. 단위 3건 그린, 라이브 `top?limit=6`→6종목 유니크(빈 슬롯을 다른 시장·패턴 후보가 채움), smoke 0에러. (참고: top은 구조점수 정렬 — 종합 Pattern Score 정렬은 pattern_score 영속화 선행 필요, 백로그) |
 | R82 | **시간 만료 신호 활성 후보 제외** (BE, read-model 정합성) — 활성상태 111건 중 58건이 `expires_at` 경과인데도 상태 미전이(스케줄러 지연/게이트)로 `top`·활성목록이 만료 신호를 최신 후보로 노출(홈이 3개월 지난 IMALOL을 score100 최상단에 띄움). `findTopByScore`·`findPage`(activeOnly 분기)에 `expiresAt>:now` 가드 추가(비파괴적 read 필터, 상태 전이는 여전히 스케줄러). 기본 목록(active_only=false) 하위호환. 라이브 top이 유효 후보(AMZN·CI·ABBV…)로 교체, smoke 0에러 |
 | R83 | **신호 카드 관심 등록 토글** (FE, 마찰 감소) — 관심 등록이 신호 상세에서만 가능해 홈 주목신호·스캐너 목록에서 바로 못 담던 것을, `SignalCard`에 별 토글 추가(담김=채운 별). `useWatchlist`로 소속 판정, add/remove 훅으로 토글, `<Link>` 내부라 prevent/stopPropagation. 3곳(홈·스캐너·종목상세) 공유 일괄 적용, 워치리스트 쿼리 키 공유로 카드별 재요청 없음. mock 패리티 O. FE 전용, typecheck/build/smoke 0에러, 워치리스트 add/remove 왕복 실측 |
+| R84 | **신호 상세 액션 시장별 현실화** (FE) — "다음 액션"이 주식에도 FUTURES+레버리지+롱/숏을 하드코딩하던 것을(비현실적 "AMZN 3배 숏"), `market==="CRYPTO"` 분기로 코인=선물 롱/숏+레버리지, 주식=현물 매수(SPOT BUY, 레버리지·숏 숨김+안내)로 수정. 백엔드 무변경. typecheck/build/smoke 0에러, 주식 상세 단일 현물매수 렌더 확인, `POST /paper/orders SPOT`(AMZN)→201 FILLED(leverage 1) 실측 후 리셋 원복 |
 
 ---
 
