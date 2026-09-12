@@ -102,7 +102,7 @@ public class AdminController {
         this.auditService = auditService;
     }
 
-    public record UserSummary(long total, Map<String, Long> byStatus) {
+    public record UserSummary(long total, Map<String, Long> byStatus, Map<String, Long> byTier) {
     }
 
     public record AlertSummary(long total, long enabled, long disabled) {
@@ -205,7 +205,8 @@ public class AdminController {
 
         AdminOverviewDto dto = new AdminOverviewDto(
                 TimeUtil.toIso(Instant.now()),
-                new UserSummary(users.size(), countBy(users, u -> u.getStatus().name())),
+                new UserSummary(users.size(), countBy(users, u -> u.getStatus().name()),
+                        countBy(users, u -> com.vein.billing.Entitlements.normalize(u.getTier()))),
                 new AlertSummary(alerts.size(), enabledAlerts, alerts.size() - enabledAlerts),
                 new NotificationSummary(
                         notifications.size(),
