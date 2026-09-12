@@ -153,6 +153,7 @@
 | R83 | **신호 카드 관심 등록 토글** (FE, 마찰 감소) — 관심 등록이 신호 상세에서만 가능해 홈 주목신호·스캐너 목록에서 바로 못 담던 것을, `SignalCard`에 별 토글 추가(담김=채운 별). `useWatchlist`로 소속 판정, add/remove 훅으로 토글, `<Link>` 내부라 prevent/stopPropagation. 3곳(홈·스캐너·종목상세) 공유 일괄 적용, 워치리스트 쿼리 키 공유로 카드별 재요청 없음. mock 패리티 O. FE 전용, typecheck/build/smoke 0에러, 워치리스트 add/remove 왕복 실측 |
 | R84 | **신호 상세 액션 시장별 현실화** (FE) — "다음 액션"이 주식에도 FUTURES+레버리지+롱/숏을 하드코딩하던 것을(비현실적 "AMZN 3배 숏"), `market==="CRYPTO"` 분기로 코인=선물 롱/숏+레버리지, 주식=현물 매수(SPOT BUY, 레버리지·숏 숨김+안내)로 수정. 백엔드 무변경. typecheck/build/smoke 0에러, 주식 상세 단일 현물매수 렌더 확인, `POST /paper/orders SPOT`(AMZN)→201 FILLED(leverage 1) 실측 후 리셋 원복 |
 | R85 | **신호 상세 유효기간(만료 D-day) 노출** (BE+FE) — 활성 신호가 언제까지 유효한지 안 보이던 것을, `SignalDetailDto.expiresAt` 추가(detail()에서 채움)+상세 헤더에 "유효기간 {일시} (D-N)" 라인(임박 경고색, 만료시 "만료됨·갱신대기"). setup 잔여 유효기간을 진입 판단에 제공. mock도 expires_at 파리티(detected+30d). BE test 그린, 실측 `/signals/88`={expires 2026-09-14, D-2}, FE build/smoke 0에러 |
+| R86 | **신호 상세에 "이 패턴 과거 성과(base rate)" 노출** (FE) — 성과 패널이 이 신호 자체 실현수익만 보여줘 갓 탐지된 신호(판단이 가장 필요한 순간)엔 "측정 대기"만 뜨던 것을, 성과 카드 최상단에 같은 유형(type·market·timeframe) 과거 `표본 N·1일 적중률·평균`을 `/signals/performance/summary`(스캐너 스트립과 동일 데이터) 재사용으로 노출(표본<20 "참고만" 배지). 해자(실측 적중률)를 개별 신호 판단 지점에서 바로 확인. 신규 API 없음, mock 패리티. typecheck/build/mock smoke 0에러, 상세(ABC·CRYPTO·4h) 표본42·61.9%·+3.20% 렌더 확인 |
 
 ---
 
