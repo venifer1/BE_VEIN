@@ -1,6 +1,6 @@
 # VEIN — 프로젝트 현황
 
-> **기준일:** 2026-09-08
+> **기준일:** 2026-09-13 (R88 통계 리프레시)
 > **문서 성격:** 이 프로젝트가 왜 존재하고, 어디까지 왔고, 다음에 뭘 할지에 대한 단일 기준 문서.
 > 라운드별 상세 이력은 `WORKLOG.md`·`ROUND*.md`, API 계약은 `API_CONTRACT.md` 참조.
 
@@ -59,8 +59,8 @@
 
 | 저장소 | 스택 | 규모 | 상태 |
 |---|---|---|---|
-| **BE_VEIN** | Spring Boot 3.3 · Java 21 · PostgreSQL 16 · Redis 7 · Flyway | Java · 28 컨트롤러 · **약 78개 엔드포인트** · 마이그레이션 V1~V24 | 실동작 |
-| **FE_VEIN** | Next.js 14 App Router · TS · Tailwind/shadcn · lightweight-charts · TanStack Query | TS 12,057줄 · 14 라우트 · **약 55개 엔드포인트 사용** | 실동작 |
+| **BE_VEIN** | Spring Boot 3.3 · Java 21 · PostgreSQL 16 · Redis 7 · Flyway | Java · 33 컨트롤러 · **약 89개 엔드포인트** · 마이그레이션 V1~V28 | 실동작 |
+| **FE_VEIN** | Next.js 14 App Router · TS · Tailwind/shadcn · lightweight-charts · TanStack Query | TS 약 14,200줄 · 16 라우트 · **약 60개 엔드포인트 사용** | 실동작 |
 | **APP_VEIN** | Flutter (Dart 3) · riverpod · go_router · dio · fl_chart | Dart 7,614줄 · 12 라우트 · **22개 엔드포인트 사용** | **크게 지연** |
 | **사이드카** | Python · yfinance · pykrx · telethon · Upbit WS | — | **SIDECAR_VEIN 별도 저장소로 분리**(`requirements.txt`로 standalone 실행 가능). 실행은 레거시 venv도 허용 |
 
@@ -155,6 +155,7 @@
 | R85 | **신호 상세 유효기간(만료 D-day) 노출** (BE+FE) — 활성 신호가 언제까지 유효한지 안 보이던 것을, `SignalDetailDto.expiresAt` 추가(detail()에서 채움)+상세 헤더에 "유효기간 {일시} (D-N)" 라인(임박 경고색, 만료시 "만료됨·갱신대기"). setup 잔여 유효기간을 진입 판단에 제공. mock도 expires_at 파리티(detected+30d). BE test 그린, 실측 `/signals/88`={expires 2026-09-14, D-2}, FE build/smoke 0에러 |
 | R86 | **신호 상세에 "이 패턴 과거 성과(base rate)" 노출** (FE) — 성과 패널이 이 신호 자체 실현수익만 보여줘 갓 탐지된 신호(판단이 가장 필요한 순간)엔 "측정 대기"만 뜨던 것을, 성과 카드 최상단에 같은 유형(type·market·timeframe) 과거 `표본 N·1일 적중률·평균`을 `/signals/performance/summary`(스캐너 스트립과 동일 데이터) 재사용으로 노출(표본<20 "참고만" 배지). 해자(실측 적중률)를 개별 신호 판단 지점에서 바로 확인. 신규 API 없음, mock 패리티. typecheck/build/mock smoke 0에러, 상세(ABC·CRYPTO·4h) 표본42·61.9%·+3.20% 렌더 확인 |
 | R87 | **API_CONTRACT.md 동기화** (문서) — R74(→R73) 이후 R77~R86 계약 델타 미반영분을 문서↔코드 정적 대조로 반영: **누락 엔드포인트 2개**(`/signals/{id}/performance`·`/signals/performance/summary` — 해자, FE가 쓰는데 계약서에 없었음) 추가, R77 무효화 완충(`invalidation{rule,price,buffer_pct,effective_price}`), R85 `expires_at`, R79 `helpful` 필수(400), R80 IMALOL c_target, R49/R78 에러 정규화(404/403). 코드 무변경 |
+| R88 | **PROJECT_STATUS 통계 드리프트 교정** (문서) — 단일 진입 문서 §2.1이 코드 실측과 어긋나 있던 것을 실측으로 갱신: 컨트롤러 28→**33**, 엔드포인트 ~78→**~89**, 마이그레이션 V1~V24→**V1~V28**, FE 라우트 14→**16**·TS ~12,057→**~14,200줄**. 기준일 2026-09-08→2026-09-13. 코드 무변경(정적 카운트로 검증) |
 
 ---
 
