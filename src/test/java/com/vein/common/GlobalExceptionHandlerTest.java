@@ -5,10 +5,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Collections;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.validation.ConstraintViolationException;
 
@@ -57,5 +61,24 @@ class GlobalExceptionHandlerTest {
 
         assertThat(resp.getStatusCode().value()).isEqualTo(405);
         assertThat(resp.getBody().error().code()).isEqualTo("METHOD_NOT_ALLOWED");
+    }
+
+    @Test
+    void unmappedPath_noResource_maps_to_404() {
+        var ex = new NoResourceFoundException(HttpMethod.GET, "/api/v1/nonexistent");
+        ResponseEntity<ApiError> resp = handler.handleNotFound(ex);
+
+        assertThat(resp.getStatusCode().value()).isEqualTo(404);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().error().code()).isEqualTo("NOT_FOUND");
+    }
+
+    @Test
+    void unmappedPath_noHandler_maps_to_404() {
+        var ex = new NoHandlerFoundException("GET", "/api/v1/foo/bar", new HttpHeaders());
+        ResponseEntity<ApiError> resp = handler.handleNotFound(ex);
+
+        assertThat(resp.getStatusCode().value()).isEqualTo(404);
+        assertThat(resp.getBody().error().code()).isEqualTo("NOT_FOUND");
     }
 }

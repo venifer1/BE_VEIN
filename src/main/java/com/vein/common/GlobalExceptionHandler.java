@@ -11,6 +11,8 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -86,6 +88,19 @@ public class GlobalExceptionHandler {
                 "Method " + ex.getMethod() + " not allowed",
                 TraceIdFilter.currentTraceId(), null);
         return ResponseEntity.status(ErrorCode.METHOD_NOT_ALLOWED.status()).body(body);
+    }
+
+    /**
+     * 미매핑 경로(오타 URL·존재하지 않는 리소스)는 <b>클라이언트 404</b>다. R43이 잘못된 요청을
+     * 4xx로 정규화했지만, 인증을 통과한 미매핑 경로는 catch-all에 걸려 500 + ERROR 로그로 새고
+     * 있었다. 여기서 404로 매핑해 로그 오염과 "재시도 가능한 서버 오류" 오인을 막는다.
+     * (미인증 미매핑 경로는 시큐리티가 먼저 401을 낸다.)
+     */
+    @ExceptionHandler({ NoResourceFoundException.class, NoHandlerFoundException.class })
+    public ResponseEntity<ApiError> handleNotFound(Exception ex) {
+        ApiError body = ApiError.of(ErrorCode.NOT_FOUND.name(), "No handler for the requested path",
+                TraceIdFilter.currentTraceId(), null);
+        return ResponseEntity.status(ErrorCode.NOT_FOUND.status()).body(body);
     }
 
     @ExceptionHandler(Exception.class)
