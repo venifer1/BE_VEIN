@@ -146,6 +146,7 @@
 | R76 | **알림 규칙 한도 선제 안내** (Track C UX, R75 후속) — 알림 생성 다이얼로그가 `/me/entitlements`의 `ALERTS` 한도(FREE 10)를 열릴 때 조회, `N/10` 안내 상시 노출·한도 도달 시 폼 대신 PRO 안내 화면으로 전환(402 원천 차단)+`PLAN_LIMIT_EXCEEDED` 친화 메시지 매핑. FE 전용, 라이브 smoke 0에러 |
 | R77 | **무효화 실질가(R53 완충) 노출** (BE+FE) — 신호 상세가 raw 기준선만 보여주던 걸, 실제 발동가(`effective_price`=기준선×(1−buffer))·완충률을 함께 노출. `SignalStatusTransitionService`에 `thresholdPrice`/`effectiveInvalidationPrice` 추출·`InvalidationDto` 확장, FE 카드에 "실질 무효화가(−3% 완충)"+설명, R:R 거리도 실질가 우선. `SignalLowBreakTest` 6/6, 실측 `/signals/275`={89.25→86.5725}, 라이브 smoke 0에러 |
 | R78 | **비관리자 admin 접근 500 → 403 정규화** (BE, 견고성) — 신규 TESTER 토큰 GET 훑기 실측으로 `/admin/**` 전 엔드포인트가 비관리자에게 **500**(catch-all이 `@PreAuthorize`의 `AuthorizationDeniedException`을 삼켜 500+ERROR로그)임을 발견. `GlobalExceptionHandler`에 `AccessDeniedException→403 FORBIDDEN` 핸들러 추가(R43/R49 견고성 보완, 로그 미출력). 신규 스키마 없음. 단위 `accessDenied_maps_to_403` 추가·전체 그린, 라이브 TESTER 4개 admin 경로 403·admin 200·미인증 401·`Unhandled exception` 0건, smoke 0에러 |
+| R79 | **Explain 피드백 `helpful` 필수화** (BE, 무결성) — 쓰기 엔드포인트 빈/불량 바디 스윕에서 `POST /explain/{id}/feedback`만 빈 바디 `{}`가 200 통과함을 발견. `Request.helpful`이 primitive boolean이라 누락 시 `false`로 채워져 "아쉬워요"가 조용히 기록·유용률(R22) 오염. `@NotNull Boolean`으로 변경 → 누락/null 400. 나머지 쓰기 경로는 R43/R58/R59로 이미 견고(전부 400/404). 단위 `ExplainFeedbackRequestTest` 2건 추가·그린, 라이브 `{}`·null→400·`true`→200, smoke 0에러 |
 
 ---
 

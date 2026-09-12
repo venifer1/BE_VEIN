@@ -10,6 +10,8 @@ import com.vein.common.ApiException;
 import com.vein.common.ErrorCode;
 import com.vein.signal.PatternSignalRepository;
 
+import jakarta.validation.constraints.NotNull;
+
 @Service
 public class ExplainFeedbackService {
 
@@ -22,7 +24,9 @@ public class ExplainFeedbackService {
         this.signalRepository = signalRepository;
     }
 
-    public record Request(boolean helpful, String reason) {
+    // helpful은 명시 필수(@NotNull Boolean): primitive boolean이면 빈 바디 {}가 false로 채워져
+    // "아쉬워요"가 조용히 기록돼 유용률(R22)을 오염시켰다. 누락 시 400으로 거부한다. (R79)
+    public record Request(@NotNull Boolean helpful, String reason) {
     }
 
     public record Summary(long totalCount, long helpfulCount, String helpfulRate,
