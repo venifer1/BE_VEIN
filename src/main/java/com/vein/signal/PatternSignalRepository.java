@@ -31,6 +31,9 @@ public interface PatternSignalRepository extends JpaRepository<PatternSignal, Lo
               and (:timeframe is null or s.timeframe = :timeframe)
               and (:instrumentId is null or s.instrumentId = :instrumentId)
               and (:status is null or s.status = :status)
+              and ( :activeOnly = false
+                    or s.status in (com.vein.signal.SignalStatus.DETECTED,
+                                    com.vein.signal.SignalStatus.NEAR_COMPLETION) )
               and ( cast(:cursorTs as Instant) is null
                     or s.detectedAt < :cursorTs
                     or (s.detectedAt = :cursorTs and s.id < :cursorId) )
@@ -51,6 +54,7 @@ public interface PatternSignalRepository extends JpaRepository<PatternSignal, Lo
                                  @Param("cursorId") Long cursorId,
                                  @Param("instrumentIds") List<Long> instrumentIds,
                                  @Param("nearOnly") boolean nearOnly,
+                                 @Param("activeOnly") boolean activeOnly,
                                  Pageable pageable);
 
     /**

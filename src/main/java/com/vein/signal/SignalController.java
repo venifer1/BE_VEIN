@@ -57,10 +57,12 @@ public class SignalController {
             @RequestParam(value = "status", required = false) SignalStatus status,
             @RequestParam(value = "near_only", required = false, defaultValue = "false")
             boolean nearOnly,
+            @RequestParam(value = "active_only", required = false, defaultValue = "false")
+            boolean activeOnly,
             @RequestParam(value = "cursor", required = false) String cursor) {
 
         SignalListResult result = signalService.list(
-                type, market, timeframe, instrumentId, watchlistOnly, status, nearOnly, cursor,
+                type, market, timeframe, instrumentId, watchlistOnly, status, nearOnly, activeOnly, cursor,
                 watchlistOnly ? currentUserId() : null);
         return ApiResponse.list(result.items(), result.nextCursor());
     }

@@ -121,6 +121,7 @@
 | R51 | **다이제스트 조용한시간 방출 요약** (Track A #3 후속) — R46 스풀링으로 보류됐다 방출된 건수를 R45 다이제스트에 `released`로 집계(읽기 시점, 스케줄러 없음). 설정 "알림 요약"에 "보류됐다 방금 도착 N건" 라인. 단위 6/6 |
 | R52 | **Track C 착수: 구독 티어 + 엔타이틀먼트** — V28 `users.tier`(FREE/PRO). `com.vein.billing`: `Entitlements`(순수 티어→한도), `GET /me/entitlements`, 게이트 1개(FREE 저장식 3개 초과 시 402 PLAN_LIMIT_EXCEEDED). 설정 "구독" 카드. **결제 연동·기능제한 전면적용은 후속**. 단위 5/5 |
 | R53 | **저가-이탈 무효화 완화 버퍼** (사용자 요청) — ABC(A 저점)·TOP(B 저점) 무효화가 1틱만 깨도 죽던 것을, `low < 기준선×(1−buffer)`일 때만 무효로 완화(꼬리/노이즈 흡수). `vein.signal.invalidation-buffer-pct` 기본 3%(env로 조정). 순수 `breaches()` 단위 5/5. FE 무변경 |
+| R54 | **스캐너 기본 활성 신호만** (UI 감사) — 스캐너 목록이 상태 무필터라 만료 신호가 상단 노이즈이던 것을, `GET /signals?active_only=` 추가 + 스캐너 기본 활성만(DETECTED/NEAR_COMPLETION), "만료 포함" 토글로 전체 노출. API 하위호환(기본 false). mock 패리티 |
 
 ---
 

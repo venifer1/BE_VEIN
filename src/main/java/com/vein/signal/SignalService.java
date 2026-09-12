@@ -58,7 +58,7 @@ public class SignalService {
 
     public SignalListResult list(SignalType type, String market, String timeframeCode,
                                  Long instrumentId, boolean watchlistOnly, SignalStatus status,
-                                 boolean nearOnly, String cursor, Long currentUserId) {
+                                 boolean nearOnly, boolean activeOnly, String cursor, Long currentUserId) {
         String tfCode = null;
         if (timeframeCode != null && !timeframeCode.isBlank()) {
             try {
@@ -88,7 +88,7 @@ public class SignalService {
 
         List<PatternSignal> rows = signalRepository.findPage(
                 type, marketFilter, tfCode, instrumentId, status, cursorTs, cursorId,
-                instrumentIds, nearOnly, Pageable.ofSize(PAGE_SIZE + 1));
+                instrumentIds, nearOnly, activeOnly, Pageable.ofSize(PAGE_SIZE + 1));
 
         String nextCursor = null;
         if (rows.size() > PAGE_SIZE) {
