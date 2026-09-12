@@ -242,7 +242,7 @@ public class LiquidationService {
             return;
         }
 
-        String title = "Liquidation spike " + spike.level();
+        String title = com.vein.notification.NotificationDigest.LIQUIDATION_SPIKE_PREFIX + " " + spike.level();
         String body = "Last 5m " + spike.recent5mUsd()
                 + " USD, baseline " + spike.baseline5mUsd()
                 + " USD, ratio " + spike.ratio() + "x";

@@ -198,7 +198,7 @@ public class ConditionScannerService {
             if (match.getId() == null || reactivated || match.getLastNotifiedAt() == null) {
                 notificationService.createSystemInApp(
                         rule.getUserId(),
-                        "Scanner match: " + rule.getName(),
+                        com.vein.notification.NotificationDigest.SCANNER_MATCH_PREFIX + " " + rule.getName(),
                         item.symbol() + " matched " + rule.getMarket() + " "
                                 + rule.getTimeframe() + " conditions");
                 match.markNotified(now);

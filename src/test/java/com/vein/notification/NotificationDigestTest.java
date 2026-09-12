@@ -38,6 +38,15 @@ class NotificationDigestTest {
     }
 
     @Test
+    void categoryMarkersUseSharedConstants() {
+        // 생성부와 분류부가 공유하는 상수로 만든 제목이 올바른 분류로 매핑되는지(드리프트 방지, R70)
+        assertThat(NotificationDigest.category(null, NotificationDigest.SCANNER_MATCH_PREFIX + " 내규칙"))
+                .isEqualTo("SCANNER");
+        assertThat(NotificationDigest.category(null, NotificationDigest.LIQUIDATION_SPIKE_PREFIX + " HIGH"))
+                .isEqualTo("LIQUIDATION");
+    }
+
+    @Test
     void aggregatesCountsAndCategoriesInFixedOrder() {
         List<Entry> entries = List.of(
                 entry("1", 10L, "BTC ABC signal", false, 5),

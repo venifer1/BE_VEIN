@@ -32,6 +32,13 @@ public final class NotificationDigest {
 
     private static final int RECENT_LIMIT = 5;
 
+    /**
+     * 분류 유도용 제목 마커. 알림 생성부(ConditionScannerService·LiquidationService)와 여기 분류부가
+     * 이 상수를 공유해 문자열 드리프트(한쪽만 바뀌면 분류 깨짐)를 막는다(R70).
+     */
+    public static final String SCANNER_MATCH_PREFIX = "Scanner match:";
+    public static final String LIQUIDATION_SPIKE_PREFIX = "Liquidation spike";
+
     private NotificationDigest() {
     }
 
@@ -89,10 +96,10 @@ public final class NotificationDigest {
             return "SIGNAL";
         }
         String t = title == null ? "" : title;
-        if (t.startsWith("Scanner match:")) {
+        if (t.startsWith(SCANNER_MATCH_PREFIX)) {
             return "SCANNER";
         }
-        if (t.startsWith("Liquidation spike")) {
+        if (t.startsWith(LIQUIDATION_SPIKE_PREFIX)) {
             return "LIQUIDATION";
         }
         return "SYSTEM";
