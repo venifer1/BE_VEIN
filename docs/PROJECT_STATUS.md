@@ -149,6 +149,7 @@
 | R79 | **Explain 피드백 `helpful` 필수화** (BE, 무결성) — 쓰기 엔드포인트 빈/불량 바디 스윕에서 `POST /explain/{id}/feedback`만 빈 바디 `{}`가 200 통과함을 발견. `Request.helpful`이 primitive boolean이라 누락 시 `false`로 채워져 "아쉬워요"가 조용히 기록·유용률(R22) 오염. `@NotNull Boolean`으로 변경 → 누락/null 400. 나머지 쓰기 경로는 R43/R58/R59로 이미 견고(전부 400/404). 단위 `ExplainFeedbackRequestTest` 2건 추가·그린, 라이브 `{}`·null→400·`true`→200, smoke 0에러 |
 | R80 | **IMALOL C 예상가 거리 노출** (FE, R66/R67 확장) — 활성 신호의 큰 축인 IMALOL이 항상 `c_target`(=projectedClose 박스 투영가)을 갖는데 카드/상세의 C목표 거리(R66)가 ABC/TOP 전용이라 빠져 있던 것을 확장. 카드는 "C {가격} (±X%)", 상세는 라벨 구분(ABC/TOP="C 목표가", IMALOL="C 예상가", Explain 문구와 일치). R:R은 invalidation 있는 ABC/TOP 유지(IMALOL은 무효화가 null). mock 이미 패리티. FE 전용, typecheck/build/라이브 smoke 0에러, IMALOL 상세 c_target 렌더 확인 |
 | R81 | **홈 주목신호 종목별 dedup** (BE, 큐레이션 품질) — 실화면 점검에서 `/signals/top`이 같은 종목을 타임프레임만 달리해(1w·3d 동일 IMALOL) 중복 노출함을 발견(6칸에 WBA 2번=유니크 5). `SignalService.top()`에 종목별 최상위 1건만 남기는 `dedupeByInstrument`(넉넉히 fetch 후 dedup) 추가. 정렬·필터·계약 무변경. 단위 3건 그린, 라이브 `top?limit=6`→6종목 유니크(빈 슬롯을 다른 시장·패턴 후보가 채움), smoke 0에러. (참고: top은 구조점수 정렬 — 종합 Pattern Score 정렬은 pattern_score 영속화 선행 필요, 백로그) |
+| R82 | **시간 만료 신호 활성 후보 제외** (BE, read-model 정합성) — 활성상태 111건 중 58건이 `expires_at` 경과인데도 상태 미전이(스케줄러 지연/게이트)로 `top`·활성목록이 만료 신호를 최신 후보로 노출(홈이 3개월 지난 IMALOL을 score100 최상단에 띄움). `findTopByScore`·`findPage`(activeOnly 분기)에 `expiresAt>:now` 가드 추가(비파괴적 read 필터, 상태 전이는 여전히 스케줄러). 기본 목록(active_only=false) 하위호환. 라이브 top이 유효 후보(AMZN·CI·ABBV…)로 교체, smoke 0에러 |
 
 ---
 

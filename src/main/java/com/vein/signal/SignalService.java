@@ -1,5 +1,6 @@
 package com.vein.signal;
 
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,7 +93,7 @@ public class SignalService {
 
         List<PatternSignal> rows = signalRepository.findPage(
                 type, marketFilter, tfCode, instrumentId, status, cursorTs, cursorId,
-                instrumentIds, nearOnly, activeOnly, Pageable.ofSize(PAGE_SIZE + 1));
+                instrumentIds, nearOnly, activeOnly, Instant.now(), Pageable.ofSize(PAGE_SIZE + 1));
 
         String nextCursor = null;
         if (rows.size() > PAGE_SIZE) {
@@ -125,7 +126,7 @@ public class SignalService {
         // detectedAt desc라 종목별 첫 등장이 최상위. 넉넉히 받아 dedup 후 size로 자른다. (R81)
         int fetch = Math.min(size * 5, 100);
         List<PatternSignal> rows = dedupeByInstrument(
-                signalRepository.findTopByScore(marketFilter, Pageable.ofSize(fetch)), size);
+                signalRepository.findTopByScore(marketFilter, Instant.now(), Pageable.ofSize(fetch)), size);
         List<Long> instrumentIds = rows.stream().map(PatternSignal::getInstrumentId).distinct().toList();
         Map<Long, Instrument> instruments = instrumentRepository.findAllById(instrumentIds).stream()
                 .collect(Collectors.toMap(Instrument::getId, Function.identity()));
