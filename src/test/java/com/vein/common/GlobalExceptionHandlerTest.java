@@ -10,6 +10,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -80,5 +81,20 @@ class GlobalExceptionHandlerTest {
 
         assertThat(resp.getStatusCode().value()).isEqualTo(404);
         assertThat(resp.getBody().error().code()).isEqualTo("NOT_FOUND");
+    }
+
+    /**
+     * R78: 비관리자의 {@code @PreAuthorize} 보호 경로 접근은 500이 아니라 403이어야 한다.
+     * 메서드 시큐리티의 {@code AuthorizationDeniedException}은 {@link AccessDeniedException}
+     * 하위라 부모 타입 핸들러가 함께 잡는다.
+     */
+    @Test
+    void accessDenied_maps_to_403() {
+        var ex = new AccessDeniedException("Access Denied");
+        ResponseEntity<ApiError> resp = handler.handleAccessDenied(ex);
+
+        assertThat(resp.getStatusCode().value()).isEqualTo(403);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().error().code()).isEqualTo("FORBIDDEN");
     }
 }

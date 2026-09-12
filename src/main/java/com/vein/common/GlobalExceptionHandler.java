@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -101,6 +102,21 @@ public class GlobalExceptionHandler {
         ApiError body = ApiError.of(ErrorCode.NOT_FOUND.name(), "No handler for the requested path",
                 TraceIdFilter.currentTraceId(), null);
         return ResponseEntity.status(ErrorCode.NOT_FOUND.status()).body(body);
+    }
+
+    /**
+     * 인증은 됐으나 권한이 없는 접근(비관리자가 {@code /admin/**} 등 {@code @PreAuthorize} 보호
+     * 경로 호출)은 <b>클라이언트 403</b>이다. 메서드 시큐리티가 던지는
+     * {@code AuthorizationDeniedException}(= {@link AccessDeniedException} 하위)이 catch-all에
+     * 걸려 500 + ERROR 로그로 새고 있었다(필터단은 {@code authenticated()}만 강제, 권한은 메서드
+     * 시큐리티가 처리하므로 예외가 DispatcherServlet까지 전파됨). 여기서 403으로 매핑해 로그 오염과
+     * "재시도 가능한 서버 오류" 오인을 막는다. (미인증은 시큐리티가 먼저 401을 낸다.)
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex) {
+        ApiError body = ApiError.of(ErrorCode.FORBIDDEN.name(), ErrorCode.FORBIDDEN.defaultMessage(),
+                TraceIdFilter.currentTraceId(), null);
+        return ResponseEntity.status(ErrorCode.FORBIDDEN.status()).body(body);
     }
 
     @ExceptionHandler(Exception.class)
