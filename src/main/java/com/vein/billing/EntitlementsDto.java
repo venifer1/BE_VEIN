@@ -15,7 +15,7 @@ public final class EntitlementsDto {
     public record Status(String tier, boolean pro, List<Feature> features) {
     }
 
-    /** 기능별 한도. {@code limit}: 허용 개수, {@code -1}이면 무제한. */
-    public record Feature(String key, String label, int limit) {
+    /** 기능별 한도·사용량. {@code limit}: 허용 개수({@code -1}=무제한), {@code used}: 현재 사용 수. */
+    public record Feature(String key, String label, int limit, int used) {
     }
 }

@@ -42,11 +42,17 @@ public final class Entitlements {
         return isPro(tier) ? -1 : FREE_ALERTS;
     }
 
+    /** 사용량 없이(0) 한도만. */
     public static Status forTier(String tier) {
+        return forTier(tier, 0, 0);
+    }
+
+    /** 현재 사용량을 함께 반영한 엔타이틀먼트. */
+    public static Status forTier(String tier, int scannerUsed, int alertUsed) {
         String t = normalize(tier);
         List<Feature> features = List.of(
-                new Feature(SAVED_SCANNER_RULES, "저장 조건검색식", scannerRuleLimit(t)),
-                new Feature(ALERTS, "신호 알림 규칙", alertLimit(t)));
+                new Feature(SAVED_SCANNER_RULES, "저장 조건검색식", scannerRuleLimit(t), scannerUsed),
+                new Feature(ALERTS, "신호 알림 규칙", alertLimit(t), alertUsed));
         return new Status(t, isPro(t), features);
     }
 }

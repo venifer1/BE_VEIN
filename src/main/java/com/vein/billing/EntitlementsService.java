@@ -3,7 +3,9 @@ package com.vein.billing;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.vein.alert.AlertRepository;
 import com.vein.billing.EntitlementsDto.Status;
+import com.vein.condition.ScannerRuleRepository;
 import com.vein.user.User;
 import com.vein.user.UserRepository;
 
@@ -14,9 +16,15 @@ import com.vein.user.UserRepository;
 public class EntitlementsService {
 
     private final UserRepository userRepository;
+    private final ScannerRuleRepository scannerRuleRepository;
+    private final AlertRepository alertRepository;
 
-    public EntitlementsService(UserRepository userRepository) {
+    public EntitlementsService(UserRepository userRepository,
+                               ScannerRuleRepository scannerRuleRepository,
+                               AlertRepository alertRepository) {
         this.userRepository = userRepository;
+        this.scannerRuleRepository = scannerRuleRepository;
+        this.alertRepository = alertRepository;
     }
 
     @Transactional(readOnly = true)
@@ -27,7 +35,9 @@ public class EntitlementsService {
 
     @Transactional(readOnly = true)
     public Status entitlements(Long userId) {
-        return Entitlements.forTier(tierOf(userId));
+        int scannerUsed = (int) scannerRuleRepository.countByUserId(userId);
+        int alertUsed = (int) alertRepository.countByUserId(userId);
+        return Entitlements.forTier(tierOf(userId), scannerUsed, alertUsed);
     }
 
     /** 저장 조건검색식 한도(-1=무제한). 게이트 재사용. */

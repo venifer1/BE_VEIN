@@ -44,6 +44,18 @@ class EntitlementsTest {
     }
 
     @Test
+    void forTierReflectsUsageCounts() {
+        Status s = Entitlements.forTier("FREE", 2, 5);
+        var rules = s.features().stream()
+                .filter(f -> f.key().equals(Entitlements.SAVED_SCANNER_RULES)).findFirst().orElseThrow();
+        assertThat(rules.used()).isEqualTo(2);
+        assertThat(rules.limit()).isEqualTo(3);
+        var alerts = s.features().stream()
+                .filter(f -> f.key().equals(Entitlements.ALERTS)).findFirst().orElseThrow();
+        assertThat(alerts.used()).isEqualTo(5);
+    }
+
+    @Test
     void forTierExposesFeatureLimits() {
         Status s = Entitlements.forTier("FREE");
         assertThat(s.features()).extracting(EntitlementsDto.Feature::key)
