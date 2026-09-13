@@ -34,7 +34,8 @@ public final class PaperDto {
             String timeframe) {
     }
 
-    public record OrderResponse(String id, String accountId, Long instrumentId, Long signalId,
+    public record OrderResponse(String id, String accountId, Long instrumentId, String symbol,
+                                String name, Long signalId,
                                 String investmentType, String positionSide, String side, String type,
                                 String price, String quantity, String leverage, boolean reduceOnly,
                                 String status, FillResponse fill) {

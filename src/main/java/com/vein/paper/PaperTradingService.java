@@ -116,7 +116,7 @@ public class PaperTradingService {
             applySell(account, instrument, fillPrice, quantity, notional, fee, order.getId());
         }
         order.fill(fillPrice);
-        return toOrder(order, fill);
+        return toOrder(order, fill, instrument);
     }
 
     public PortfolioResponse portfolio(Long userId) {
@@ -138,9 +138,13 @@ public class PaperTradingService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal equity = account.getCashBalance().add(marketValue);
 
-        List<OrderResponse> recentOrders = orderRepository.findTop20ByAccountIdOrderByCreatedAtDesc(account.getId())
-                .stream()
-                .map(order -> toOrder(order, null))
+        List<PaperOrder> orders = orderRepository.findTop20ByAccountIdOrderByCreatedAtDesc(account.getId());
+        // 종목명을 배치 로드해 주문 내역에 심볼/이름을 채운다(내역이 "#id"로 보이던 것 개선, R91). N+1 회피.
+        Map<Long, Instrument> orderInstruments = instrumentRepository.findAllById(
+                        orders.stream().map(PaperOrder::getInstrumentId).distinct().toList())
+                .stream().collect(Collectors.toMap(Instrument::getId, Function.identity()));
+        List<OrderResponse> recentOrders = orders.stream()
+                .map(order -> toOrder(order, null, orderInstruments.get(order.getInstrumentId())))
                 .toList();
 
         return new PortfolioResponse(toAccount(account), money(equity), money(unrealizedPnl),
@@ -269,9 +273,12 @@ public class PaperTradingService {
                 account.getStatus(), account.getSimulationRun());
     }
 
-    private OrderResponse toOrder(PaperOrder order, PaperFill fill) {
+    private OrderResponse toOrder(PaperOrder order, PaperFill fill, Instrument instrument) {
         return new OrderResponse("pord_" + order.getId(), "paper_" + order.getAccountId(),
-                order.getInstrumentId(), order.getSignalId(), order.getInvestmentType(),
+                order.getInstrumentId(),
+                instrument == null ? null : instrument.getSymbol(),
+                instrument == null ? null : instrument.getName(),
+                order.getSignalId(), order.getInvestmentType(),
                 order.getPositionSide(), order.getSide(), order.getType(),
                 order.getPrice() == null ? null : money(order.getPrice()), qty(order.getQuantity()),
                 qty(order.getLeverage()), order.isReduceOnly(),
