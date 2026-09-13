@@ -81,7 +81,8 @@ public class EventRiskService {
         return new EventRisk(true, level, delta, note, hits);
     }
 
-    private static String ddayLabel(int dday) {
+    // package-private for unit testing (R134). D-N=이벤트 N일 전, D+N=N일 후, D-DAY=당일.
+    static String ddayLabel(int dday) {
         if (dday == 0) {
             return "D-DAY";
         }
