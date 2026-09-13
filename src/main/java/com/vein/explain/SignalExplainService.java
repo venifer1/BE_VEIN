@@ -153,7 +153,7 @@ public class SignalExplainService {
         }
     }
 
-    private BigDecimal volumeRatio(List<Candle> newestFirst) {
+    static BigDecimal volumeRatio(List<Candle> newestFirst) {
         if (newestFirst.size() < 2 || newestFirst.get(0).volume() == null) return null;
         BigDecimal sum = BigDecimal.ZERO;
         int count = 0;

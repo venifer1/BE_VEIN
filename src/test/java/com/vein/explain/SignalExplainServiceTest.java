@@ -57,4 +57,36 @@ class SignalExplainServiceTest {
         BigDecimal r = SignalExplainService.averageRangePct(List.of(candle("100.5", "100", "100.3")));
         assertThat(r).isEqualByComparingTo("0.50");
     }
+
+    // --- volumeRatio: 최신봉(index0) 거래량 ÷ 나머지 전체 평균, 소수 2자리 (R159) ---
+    private static Candle vol(String v) {
+        return Candle.of(1L, Timeframe.D1, Instant.EPOCH, "test",
+                BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE,
+                v == null ? null : new BigDecimal(v), true);
+    }
+
+    @Test
+    void volumeRatio_newestOverRestAverage() {
+        // newest 200, 나머지 평균 100 → 2.00
+        assertThat(SignalExplainService.volumeRatio(List.of(vol("200"), vol("100"), vol("100"), vol("100"))))
+                .isEqualByComparingTo("2.00");
+    }
+
+    @Test
+    void volumeRatio_nullWhenTooFewOrCurrentNull() {
+        assertThat(SignalExplainService.volumeRatio(List.of(vol("100")))).isNull(); // size<2
+        assertThat(SignalExplainService.volumeRatio(List.of(vol(null), vol("100")))).isNull(); // 최신 null
+    }
+
+    @Test
+    void volumeRatio_nullWhenAllPreviousNull() {
+        assertThat(SignalExplainService.volumeRatio(List.of(vol("100"), vol(null), vol(null)))).isNull();
+    }
+
+    @Test
+    void volumeRatio_roundsToTwoDecimals() {
+        // 100 / 3 = 33.33 (조건검색기 4자리와 달리 2자리)
+        assertThat(SignalExplainService.volumeRatio(List.of(vol("100"), vol("3"), vol("3"), vol("3"))))
+                .isEqualByComparingTo("33.33");
+    }
 }
