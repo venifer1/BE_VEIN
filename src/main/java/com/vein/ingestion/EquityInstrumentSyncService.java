@@ -128,7 +128,7 @@ public class EquityInstrumentSyncService {
     }
 
     /** {@code 005930.KS} -> {@code 005930} (pykrx code); no-op if there is no dot. */
-    private static String stripSuffix(String symbol) {
+    static String stripSuffix(String symbol) {
         int dot = symbol.indexOf('.');
         return dot < 0 ? symbol : symbol.substring(0, dot);
     }
