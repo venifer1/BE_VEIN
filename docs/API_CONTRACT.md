@@ -32,7 +32,7 @@
 | POST | `/auth/login` | `{email,password}`→`{access_token,refresh_token,expires_in,user}` |
 | POST | `/auth/refresh` | 토큰 회전 |
 | POST | `/auth/logout` | 204 |
-| GET | `/me` | 내 정보 |
+| GET | `/users/me` | 내 정보(인증 사용자 프로필 `UserDto`). 미인증 시 `401 AUTH_INVALID` |
 
 ## 2. 터미널 (홈) — `market` 모듈
 | Method | Path | 설명 |
