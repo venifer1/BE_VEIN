@@ -161,7 +161,7 @@ public class SignalPerformanceService {
     }
 
     /** (value / base - 1) * 100, scaled to PCT_SCALE. Null value -> null. */
-    private BigDecimal pct(BigDecimal value, BigDecimal base) {
+    static BigDecimal pct(BigDecimal value, BigDecimal base) {
         if (value == null || base == null || base.signum() == 0) {
             return null;
         }
