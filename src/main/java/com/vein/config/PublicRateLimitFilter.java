@@ -38,7 +38,7 @@ public class PublicRateLimitFilter extends OncePerRequestFilter {
     private static final int MAX_TRACKED_IPS = 20_000;
 
     /** One guarded path rule. {@code exact} matches the URI exactly; else it is a prefix. */
-    private record Rule(String path, boolean exact, int max, long windowMs, int retryAfterSec) {
+    record Rule(String path, boolean exact, int max, long windowMs, int retryAfterSec) {
         boolean matches(String uri) {
             return exact ? uri.equals(path) : uri.startsWith(path);
         }
@@ -69,7 +69,7 @@ public class PublicRateLimitFilter extends OncePerRequestFilter {
         }
     }
 
-    private static Rule ruleFor(String uri) {
+    static Rule ruleFor(String uri) {
         if (uri == null) {
             return null;
         }
