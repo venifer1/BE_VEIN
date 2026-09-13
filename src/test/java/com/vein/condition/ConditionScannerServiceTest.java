@@ -45,4 +45,19 @@ class ConditionScannerServiceTest {
         assertThat(ConditionScannerService.compare(A, "==", B)).isFalse();
         assertThat(ConditionScannerService.compare(A, null, B)).isFalse();
     }
+
+    @Test
+    void matchRate_percentAndDivByZeroGuard() {
+        assertThat(ConditionScannerService.matchRate(0, 5)).isEqualByComparingTo("0");
+        assertThat(ConditionScannerService.matchRate(100, 5)).isEqualByComparingTo("5.00");
+        assertThat(ConditionScannerService.matchRate(3, 1)).isEqualByComparingTo("33.33"); // HALF_UP
+    }
+
+    @Test
+    void frequencyGrade_bands() {
+        assertThat(ConditionScannerService.frequencyGrade(new BigDecimal("1.99"))).isEqualTo("LOW");
+        assertThat(ConditionScannerService.frequencyGrade(new BigDecimal("2"))).isEqualTo("MEDIUM");
+        assertThat(ConditionScannerService.frequencyGrade(new BigDecimal("9.99"))).isEqualTo("MEDIUM");
+        assertThat(ConditionScannerService.frequencyGrade(BigDecimal.TEN)).isEqualTo("HIGH");
+    }
 }

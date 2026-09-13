@@ -363,7 +363,8 @@ public class ConditionScannerService {
                 TimeUtil.toIso(rule.getCreatedAt()), latestRun);
     }
 
-    private BigDecimal matchRate(int evaluatedCount, int matchedCount) {
+    // 매치율(%)·빈도 등급: 순수, package-private for unit testing (R137).
+    static BigDecimal matchRate(int evaluatedCount, int matchedCount) {
         return evaluatedCount == 0
                 ? BigDecimal.ZERO
                 : BigDecimal.valueOf(matchedCount)
@@ -371,7 +372,8 @@ public class ConditionScannerService {
                         .divide(BigDecimal.valueOf(evaluatedCount), 2, RoundingMode.HALF_UP);
     }
 
-    private String frequencyGrade(BigDecimal rate) {
+    /** 매치율(%)→빈도 등급: <2% LOW, <10% MEDIUM, 그 이상 HIGH. */
+    static String frequencyGrade(BigDecimal rate) {
         return rate.compareTo(BigDecimal.valueOf(2)) < 0 ? "LOW"
                 : rate.compareTo(BigDecimal.TEN) < 0 ? "MEDIUM" : "HIGH";
     }
