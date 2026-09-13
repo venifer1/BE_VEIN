@@ -87,12 +87,13 @@ public class EconomicCalendarProvider {
         }
     }
 
-    private static LocalDate firstFriday(LocalDate firstOfMonth) {
+    // package-private for unit testing (R133) — 순수·결정적.
+    static LocalDate firstFriday(LocalDate firstOfMonth) {
         int shift = (DayOfWeek.FRIDAY.getValue() - firstOfMonth.getDayOfWeek().getValue() + 7) % 7;
         return firstOfMonth.plusDays(shift);
     }
 
-    private static int dday(LocalDate today, LocalDate event) {
+    static int dday(LocalDate today, LocalDate event) {
         return (int) ChronoUnit.DAYS.between(today, event);
     }
 }
