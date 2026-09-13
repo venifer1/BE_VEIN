@@ -17,6 +17,7 @@ public record SignalDto(
         String timeframe,
         String detectedAt,
         String score,
+        String patternScore,
         String currentPrice,
         String cTarget,
         PivotDates pivots) {

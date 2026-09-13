@@ -211,6 +211,7 @@ public class SignalService {
                 s.getTimeframe(),
                 TimeUtil.toIso(s.getDetectedAt()),
                 s.getScore() == null ? null : s.getScore().toPlainString(),
+                s.getPatternScore() == null ? null : s.getPatternScore().toPlainString(),
                 s.getCurrentPrice() == null ? null : s.getCurrentPrice().toPlainString(),
                 s.getCTarget() == null ? null : s.getCTarget().toPlainString(),
                 pivotDates(s.getId()));
