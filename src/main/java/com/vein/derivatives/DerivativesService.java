@@ -235,16 +235,16 @@ public class DerivativesService {
             "DOT", "BCH", "LTC", "ATOM", "NEAR", "APT", "SUI", "POL", "MATIC", "SHIB",
             "UNI", "ETC", "FIL", "ARB", "OP", "SAND", "AAVE", "INJ", "SEI", "TIA");
 
-    private static int priorityIndex(String base) {
+    static int priorityIndex(String base) {
         int i = MAJORS.indexOf(base);
         return i < 0 ? Integer.MAX_VALUE : i;
     }
 
-    private static String plain(BigDecimal v) {
+    static String plain(BigDecimal v) {
         return v == null ? null : v.toPlainString();
     }
 
-    private static double num(String s) {
+    static double num(String s) {
         try {
             return s == null ? Double.NEGATIVE_INFINITY : Double.parseDouble(s);
         } catch (NumberFormatException e) {
