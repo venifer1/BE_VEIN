@@ -157,6 +157,7 @@
 | R87 | **API_CONTRACT.md 동기화** (문서) — R74(→R73) 이후 R77~R86 계약 델타 미반영분을 문서↔코드 정적 대조로 반영: **누락 엔드포인트 2개**(`/signals/{id}/performance`·`/signals/performance/summary` — 해자, FE가 쓰는데 계약서에 없었음) 추가, R77 무효화 완충(`invalidation{rule,price,buffer_pct,effective_price}`), R85 `expires_at`, R79 `helpful` 필수(400), R80 IMALOL c_target, R49/R78 에러 정규화(404/403). 코드 무변경 |
 | R88 | **PROJECT_STATUS 통계 드리프트 교정** (문서) — 단일 진입 문서 §2.1이 코드 실측과 어긋나 있던 것을 실측으로 갱신: 컨트롤러 28→**33**, 엔드포인트 ~78→**~89**, 마이그레이션 V1~V24→**V1~V28**, FE 라우트 14→**16**·TS ~12,057→**~14,200줄**. 기준일 2026-09-08→2026-09-13. 코드 무변경(정적 카운트로 검증) |
 | R89 | **홈 주목신호 카드 과거 적중률 칩** (FE, R86 확장) — 큐레이션 카드에서 열어보기 전에 pattern base-rate로 triage. `SignalCard`에 opt-in `perfHint`(표본≥10일 때만 "과거 적중 X%(nN)"), `top-signals`가 `/signals/performance/summary`를 1회 조회해 type\|market\|timeframe 매칭. 스캐너/종목상세 목록은 무변경(노이즈 방지). mock 패리티, typecheck/build/smoke 0에러, 홈 4카드 적중률 렌더·표본없는 카드 미표시 확인 |
+| R100 | **모의투자 주문 내역 방향 한글화** (FE, 용어 후속) — 주문 내역 BUY/SELL→매수/매도, LONG/SHORT→롱/숏(+청산), `orderSideLabel` 헬퍼. 폼 토글 버튼은 관례상 영문 유지. typecheck/build 통과 |
 | R99 | **스캐너 필터 패턴 라벨 단일 소스화** (FE, 품질) — 필터바가 패턴 라벨을 카드 배지 `SIGNAL_TYPE_LABEL`와 별도 하드코딩(드리프트 위험, R70 유형)이던 것을 공유 상수 재사용으로 통합. 동작 동일, typecheck/build 통과 |
 | R98 | **홈 주목신호 정렬 기준 명시** (FE, R90 후속 마찰) — 종합 점수로 정렬하는데 카드엔 구조 점수만 보여 순서가 뒤죽박죽처럼 보이던 것을, "종합 점수 순 · 완성도+거래량+추세+변동성+뉴스" 안내 추가. mock smoke 0에러 |
 | R97 | **종목 상세 "최근 신호" 활성 우선 정렬** (FE, 실사용 마찰) — 상태 무관 최신순이라 실패·만료가 활성 신호를 가리던 것을, 활성(탐지/완성임박) 우선 안정 정렬(이력은 아래로 보존). typecheck/build 통과 |
