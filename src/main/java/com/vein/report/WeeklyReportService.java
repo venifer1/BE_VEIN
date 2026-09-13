@@ -84,7 +84,8 @@ public class WeeklyReportService {
     }
 
     /** Best and worst pattern rows by hit rate, restricted to rows with a meaningful sample. */
-    private static List<Highlight> highlights(List<PatternStat> rows) {
+    // package-private for unit testing (R141) — 순수(표본 5+ 최고/최저 hit-rate 선정).
+    static List<Highlight> highlights(List<PatternStat> rows) {
         List<PatternStat> eligible = rows.stream()
                 .filter(r -> r.sampleSize() >= MIN_HIGHLIGHT_SAMPLE)
                 .sorted(Comparator.comparing((PatternStat r) -> parse(r.hitRate())).reversed())
