@@ -318,9 +318,19 @@ public class ConditionScannerService {
         BigDecimal right = Set.of("PRICE", "MA5").contains(indicator)
                 ? metrics.ma20()
                 : decimal(condition.value(), "condition value");
-        if (left == null || right == null) return false;
+        return compare(left, condition.operator(), right);
+    }
+
+    /**
+     * 조건검색 비교(순수, R136 추출): {@code left <op> right}. 한쪽이라도 null이거나 미지원
+     * 연산자면 false(매칭 안 됨). 지원: {@code < <= > >=}.
+     */
+    static boolean compare(BigDecimal left, String operator, BigDecimal right) {
+        if (left == null || right == null || operator == null) {
+            return false;
+        }
         int comparison = left.compareTo(right);
-        return switch (condition.operator()) {
+        return switch (operator) {
             case "<" -> comparison < 0;
             case "<=" -> comparison <= 0;
             case ">" -> comparison > 0;
