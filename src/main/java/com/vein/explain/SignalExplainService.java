@@ -168,7 +168,7 @@ public class SignalExplainService {
         return newestFirst.get(0).volume().divide(average, 2, RoundingMode.HALF_UP);
     }
 
-    private BigDecimal averageRangePct(List<Candle> candles) {
+    static BigDecimal averageRangePct(List<Candle> candles) {
         BigDecimal sum = BigDecimal.ZERO;
         int count = 0;
         for (Candle candle : candles) {
