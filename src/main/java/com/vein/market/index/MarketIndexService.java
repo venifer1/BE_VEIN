@@ -95,7 +95,7 @@ public class MarketIndexService {
         return downsample(desc, HISTORY_MAX_POINTS);
     }
 
-    private static List<HistoryPoint> downsample(List<HistoryPoint> points, int max) {
+    static List<HistoryPoint> downsample(List<HistoryPoint> points, int max) {
         int n = points.size();
         if (n <= max) {
             return points;
