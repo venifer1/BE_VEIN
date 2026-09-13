@@ -158,6 +158,7 @@
 | R87 | **API_CONTRACT.md 동기화** (문서) — R74(→R73) 이후 R77~R86 계약 델타 미반영분을 문서↔코드 정적 대조로 반영: **누락 엔드포인트 2개**(`/signals/{id}/performance`·`/signals/performance/summary` — 해자, FE가 쓰는데 계약서에 없었음) 추가, R77 무효화 완충(`invalidation{rule,price,buffer_pct,effective_price}`), R85 `expires_at`, R79 `helpful` 필수(400), R80 IMALOL c_target, R49/R78 에러 정규화(404/403). 코드 무변경 |
 | R88 | **PROJECT_STATUS 통계 드리프트 교정** (문서) — 단일 진입 문서 §2.1이 코드 실측과 어긋나 있던 것을 실측으로 갱신: 컨트롤러 28→**33**, 엔드포인트 ~78→**~89**, 마이그레이션 V1~V24→**V1~V28**, FE 라우트 14→**16**·TS ~12,057→**~14,200줄**. 기준일 2026-09-08→2026-09-13. 코드 무변경(정적 카운트로 검증) |
 | R89 | **홈 주목신호 카드 과거 적중률 칩** (FE, R86 확장) — 큐레이션 카드에서 열어보기 전에 pattern base-rate로 triage. `SignalCard`에 opt-in `perfHint`(표본≥10일 때만 "과거 적중 X%(nN)"), `top-signals`가 `/signals/performance/summary`를 1회 조회해 type\|market\|timeframe 매칭. 스캐너/종목상세 목록은 무변경(노이즈 방지). mock 패리티, typecheck/build/smoke 0에러, 홈 4카드 적중률 렌더·표본없는 카드 미표시 확인 |
+| R127 | **koreanMoney lib 추출 + 테스트** (FE) — 모의투자 로컬 억/만원 포맷터를 `lib/format`로 추출(재사용·테스트 가능)+6케이스. vitest 28/28, tsc/build 통과 |
 | R126 | **toChartTime·formatTime 단위 테스트** (FE, 회귀 보호) — 남은 순수 헬퍼 테스트(26/26). FE format/types/api 커버리지 거의 완비. 소스 무변경 |
 | R125 | **indicesByKey 단위 테스트** (FE, 회귀 보호) — 홈 시장지표용 순수 헬퍼에 테스트 3케이스(매핑·null→빈맵·중복 last-wins). vitest 24/24, 소스 무변경 |
 | R124 | **compactUsd 단일 소스화 + 테스트** (FE, dedup·회귀) — 3개 페이지 중복 정의(data·derivatives·instruments)를 `lib/format.compactUsd`로 통합(홈 ₩/조억 버전은 별개라 유지), 테스트 3케이스. vitest 21/21, tsc/build 통과 |
