@@ -325,7 +325,7 @@ public class NewsService {
         return n.getPublishedAt() != null ? n.getPublishedAt() : n.getCollectedAt();
     }
 
-    private static String normalizeSource(String source) {
+    static String normalizeSource(String source) {
         if (source == null || source.isBlank()) {
             return null;
         }
@@ -340,14 +340,14 @@ public class NewsService {
      * Normalize an optional symbol filter (e.g. {@code KRW-BTC}). Blank/null →
      * null (no filter). Uppercased to match the symbols produced by tagging.
      */
-    private static String normalizeSymbol(String symbol) {
+    static String normalizeSymbol(String symbol) {
         if (symbol == null || symbol.isBlank()) {
             return null;
         }
         return symbol.trim().toUpperCase(Locale.ROOT);
     }
 
-    private static int clampSize(Integer pageSize) {
+    static int clampSize(Integer pageSize) {
         if (pageSize == null) {
             return PAGE_SIZE;
         }
