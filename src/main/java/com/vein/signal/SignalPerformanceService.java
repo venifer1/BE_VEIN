@@ -324,12 +324,12 @@ public class SignalPerformanceService {
         return out;
     }
 
-    private static boolean isMonthBucket(String bucket) {
+    static boolean isMonthBucket(String bucket) {
         return bucket != null && "MONTH".equalsIgnoreCase(bucket.trim());
     }
 
     /** UTC detection month as {@code yyyy-MM}. */
-    private static String monthOf(Instant detectedAt) {
+    static String monthOf(Instant detectedAt) {
         return detectedAt == null ? null
                 : YearMonth.from(detectedAt.atZone(ZoneOffset.UTC)).toString();
     }
