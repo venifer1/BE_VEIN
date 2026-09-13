@@ -133,7 +133,7 @@ public class MarketController {
         return ApiResponse.of(globalMarketService.global());
     }
 
-    private static Freshness freshness(Instant collectedAt, Duration window) {
+    static Freshness freshness(Instant collectedAt, Duration window) {
         if (collectedAt == null) {
             return Freshness.DELAYED;
         }
