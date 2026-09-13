@@ -287,7 +287,7 @@ public class ConditionScannerService {
         return new Metrics(price, rsi, volumeRatio, ma5, ma20, macd);
     }
 
-    private BigDecimal volumeRatio(List<Candle> ascending) {
+    static BigDecimal volumeRatio(List<Candle> ascending) {
         int last = ascending.size() - 1;
         BigDecimal current = ascending.get(last).volume();
         if (current == null) return null;
