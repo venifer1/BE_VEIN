@@ -1,6 +1,7 @@
 package com.vein.backtest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -104,5 +105,25 @@ class BacktestSimulationTest {
         assertThat(BacktestService.parseHorizon("4h")).isEqualTo(Duration.ofHours(4));
         assertThat(BacktestService.parseHorizon("2w")).isEqualTo(Duration.ofDays(14));
         assertThat(BacktestService.parseHorizon("12")).isEqualTo(Duration.ofHours(12));
+    }
+
+    @Test
+    void parseHorizon_caseInsensitiveAndWhitespaceTolerant() {
+        assertThat(BacktestService.parseHorizon("1D")).isEqualTo(Duration.ofDays(1));
+        assertThat(BacktestService.parseHorizon(" 3 h ")).isEqualTo(Duration.ofHours(3));
+    }
+
+    @Test
+    void parseHorizon_rejectsInvalidInput() {
+        assertThatThrownBy(() -> BacktestService.parseHorizon(null))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> BacktestService.parseHorizon("  "))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> BacktestService.parseHorizon("abc"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> BacktestService.parseHorizon("1x")) // 허용 단위 아님
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> BacktestService.parseHorizon("0d")) // 0 이하 거부
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
