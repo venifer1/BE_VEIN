@@ -179,7 +179,7 @@ public class ScalpSidecarClient {
         return s.startsWith("A") || s.equals("SELL") || s.startsWith("S");
     }
 
-    private static String ratio(int part, int total) {
+    static String ratio(int part, int total) {
         return BigDecimal.valueOf(part)
                 .divide(BigDecimal.valueOf(total), 4, RoundingMode.HALF_UP)
                 .toPlainString();
