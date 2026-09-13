@@ -72,4 +72,21 @@ class WeeklyReportServiceTest {
         assertThat(WeeklyReportService.signed(null)).isEqualTo("0.00");
         assertThat(WeeklyReportService.signed("")).isEqualTo("0.00");
     }
+
+    @Test
+    void parse_defaultsToZeroOnNullBlankOrBadInput() {
+        assertThat(WeeklyReportService.parse(null)).isEqualByComparingTo("0");
+        assertThat(WeeklyReportService.parse("  ")).isEqualByComparingTo("0");
+        assertThat(WeeklyReportService.parse("abc")).isEqualByComparingTo("0");
+        assertThat(WeeklyReportService.parse("3.5")).isEqualByComparingTo("3.5");
+        assertThat(WeeklyReportService.parse("-2")).isEqualByComparingTo("-2");
+    }
+
+    @Test
+    void signed_invalidParsesToPlusZero_distinctFromBlank() {
+        // 빈값은 "0.00"(부호 없음)이지만, 잘못된 문자열은 0으로 파싱 → "+0.00"(부호 있음)
+        assertThat(WeeklyReportService.signed("abc")).isEqualTo("+0.00");
+        // 반올림으로 0이 되는 미세 음수도 "+0.00"
+        assertThat(WeeklyReportService.signed("-0.001")).isEqualTo("+0.00");
+    }
 }

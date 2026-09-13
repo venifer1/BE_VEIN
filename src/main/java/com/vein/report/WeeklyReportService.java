@@ -184,7 +184,7 @@ public class WeeklyReportService {
         return b.signum() >= 0 ? "+" + b.toPlainString() : b.toPlainString();
     }
 
-    private static BigDecimal parse(String s) {
+    static BigDecimal parse(String s) {
         if (s == null || s.isBlank()) {
             return BigDecimal.ZERO;
         }
