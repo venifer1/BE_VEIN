@@ -217,7 +217,7 @@ public class IngestionService {
         return gaps;
     }
 
-    private String errorCodeOf(RuntimeException e) {
+    static String errorCodeOf(RuntimeException e) {
         if (e instanceof ApiException api) {
             return api.getErrorCode().name();
         }
