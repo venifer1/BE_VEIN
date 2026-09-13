@@ -244,8 +244,8 @@ public class BacktestService {
                 warning);
     }
 
-    /** Apply the documented overfit rule to two metrics blocks. */
-    private boolean isOverfit(Metrics in, Metrics out) {
+    /** Apply the documented overfit rule to two metrics blocks. package-private for tests (R139). */
+    static boolean isOverfit(Metrics in, Metrics out) {
         if (in.tradeCount() == 0 || out.tradeCount() == 0) {
             return false; // nothing comparable
         }
