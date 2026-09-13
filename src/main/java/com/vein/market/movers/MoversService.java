@@ -167,11 +167,10 @@ public class MoversService {
                 Candle prev = last2.get(1);
                 BigDecimal close = latest.getClose();
                 BigDecimal prevClose = prev.getClose();
-                if (close == null || prevClose == null || prevClose.signum() == 0) {
+                BigDecimal changePct = changePct(close, prevClose);
+                if (changePct == null) {
                     continue;
                 }
-                BigDecimal changePct = close.divide(prevClose, 10, RoundingMode.HALF_UP)
-                        .subtract(BigDecimal.ONE).multiply(HUNDRED).setScale(4, RoundingMode.HALF_UP);
                 BigDecimal tradeValue = latest.getVolume() == null ? null
                         : close.multiply(latest.getVolume());
                 rows.add(new MoverRow(
@@ -236,5 +235,17 @@ public class MoversService {
         } catch (NumberFormatException e) {
             return Double.NEGATIVE_INFINITY;
         }
+    }
+
+    /**
+     * 전일 대비 등락률 = (close / prevClose - 1) * 100, 소수 4자리 HALF_UP.
+     * close/prevClose가 null이거나 prevClose가 0이면 계산 불가 → null. 순수 함수.
+     */
+    static BigDecimal changePct(BigDecimal close, BigDecimal prevClose) {
+        if (close == null || prevClose == null || prevClose.signum() == 0) {
+            return null;
+        }
+        return close.divide(prevClose, 10, RoundingMode.HALF_UP)
+                .subtract(BigDecimal.ONE).multiply(HUNDRED).setScale(4, RoundingMode.HALF_UP);
     }
 }
