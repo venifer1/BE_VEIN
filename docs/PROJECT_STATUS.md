@@ -82,10 +82,10 @@
 - ✅ **알림** — 쿨다운 · 인앱 · **VAPID 백그라운드 웹푸시** · 전달 시도 추적
 - ✅ **Admin** — 회원 승인/잠금 · 감사로그 · 알림/스캐너 운영지표
 - ✅ **실시간** — STOMP/SockJS 가격 푸시 (opt-in, 미설정 시 REST 폴링 폴백)
-- ✅ **자동화 테스트** — 백엔드 JUnit5/AssertJ **47파일·215 @Test**(순수 산출식·정규화·
-  보안 라우팅·패턴 골든), 프론트 vitest **8파일·96 테스트**(포맷·지표·mock 어댑터/데이터·
-  웹푸시 헬퍼). *(2026-09-13 R180 실측. BE는 한글 경로 gradle 워커 버그 회피 위해 ASCII
-  경로 복사본 `C:\vein_be`에서 실행)*
+- ✅ **자동화 테스트** — 백엔드 JUnit5/AssertJ **50파일·230 @Test**(순수 산출식·정규화·
+  보안 라우팅·패턴 골든·Pattern Score 하위점수), 프론트 vitest **8파일·132 테스트**(포맷·지표·
+  mock 어댑터/데이터 상세 getter·생성기·웹푸시 헬퍼). *(2026-09-13 R200 실측. BE는 한글 경로
+  gradle 워커 버그 회피 위해 ASCII 경로 복사본 `C:\vein_be`에서 실행)*
 
 ### 2.3 데이터 규모 (실가동 기준)
 
@@ -162,6 +162,7 @@
 | R87 | **API_CONTRACT.md 동기화** (문서) — R74(→R73) 이후 R77~R86 계약 델타 미반영분을 문서↔코드 정적 대조로 반영: **누락 엔드포인트 2개**(`/signals/{id}/performance`·`/signals/performance/summary` — 해자, FE가 쓰는데 계약서에 없었음) 추가, R77 무효화 완충(`invalidation{rule,price,buffer_pct,effective_price}`), R85 `expires_at`, R79 `helpful` 필수(400), R80 IMALOL c_target, R49/R78 에러 정규화(404/403). 코드 무변경 |
 | R88 | **PROJECT_STATUS 통계 드리프트 교정** (문서) — 단일 진입 문서 §2.1이 코드 실측과 어긋나 있던 것을 실측으로 갱신: 컨트롤러 28→**33**, 엔드포인트 ~78→**~89**, 마이그레이션 V1~V24→**V1~V28**, FE 라우트 14→**16**·TS ~12,057→**~14,200줄**. 기준일 2026-09-08→2026-09-13. 코드 무변경(정적 카운트로 검증) |
 | R89 | **홈 주목신호 카드 과거 적중률 칩** (FE, R86 확장) — 큐레이션 카드에서 열어보기 전에 pattern base-rate로 triage. `SignalCard`에 opt-in `perfHint`(표본≥10일 때만 "과거 적중 X%(nN)"), `top-signals`가 `/signals/performance/summary`를 1회 조회해 type\|market\|timeframe 매칭. 스캐너/종목상세 목록은 무변경(노이즈 방지). mock 패리티, typecheck/build/smoke 0에러, 홈 4카드 적중률 렌더·표본없는 카드 미표시 확인 |
+| R200 | **전체 스위트 통합 헬스체크 + 세션 커버리지 총결산** (BE/FE, 마일스톤) — BE `gradle test --rerun-tasks` 그린(50파일·230 @Test, R180 대비 +3파일·+15), FE vitest 8파일 132개(96→+36). 세션 누적 BE 127→230·FE 47→132. 코드 무변경 |
 | R199 | **주간 리포트 파서/부호표기 경계(WeeklyReportService.parse) 단위 테스트** (BE, 회귀 보호) — parse ZERO 기본값 + signed 미묘분기(빈값 "0.00" vs 잘못된값 "+0.00") private→static+기존 테스트에 +2. ASCII 경로 gradle 그린(6→8). 로직 무변경 |
 | R198 | **거시경제 지표 표기 헬퍼(MacroService parse/plain/signed) 단위 테스트** (BE, 회귀 보호) — 안전파싱·null-safe·부호표기 private→static+기존 테스트에 +3. ASCII 경로 gradle 그린(6→9). 로직 무변경 |
 | R197 | **Pattern Score 하위점수 분기(PatternScoreCalculator) 단위 테스트** (BE, 회귀 보호) — 추세 충족개수·변동성 밴드·뉴스 스텝/클램프를 calculate 시나리오로 격리 검증 +3. ASCII 경로 gradle 그린(3→6). 코드 무변경 |
