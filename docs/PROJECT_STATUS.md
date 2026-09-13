@@ -158,6 +158,7 @@
 | R87 | **API_CONTRACT.md 동기화** (문서) — R74(→R73) 이후 R77~R86 계약 델타 미반영분을 문서↔코드 정적 대조로 반영: **누락 엔드포인트 2개**(`/signals/{id}/performance`·`/signals/performance/summary` — 해자, FE가 쓰는데 계약서에 없었음) 추가, R77 무효화 완충(`invalidation{rule,price,buffer_pct,effective_price}`), R85 `expires_at`, R79 `helpful` 필수(400), R80 IMALOL c_target, R49/R78 에러 정규화(404/403). 코드 무변경 |
 | R88 | **PROJECT_STATUS 통계 드리프트 교정** (문서) — 단일 진입 문서 §2.1이 코드 실측과 어긋나 있던 것을 실측으로 갱신: 컨트롤러 28→**33**, 엔드포인트 ~78→**~89**, 마이그레이션 V1~V24→**V1~V28**, FE 라우트 14→**16**·TS ~12,057→**~14,200줄**. 기준일 2026-09-08→2026-09-13. 코드 무변경(정적 카운트로 검증) |
 | R89 | **홈 주목신호 카드 과거 적중률 칩** (FE, R86 확장) — 큐레이션 카드에서 열어보기 전에 pattern base-rate로 triage. `SignalCard`에 opt-in `perfHint`(표본≥10일 때만 "과거 적중 X%(nN)"), `top-signals`가 `/signals/performance/summary`를 1회 조회해 type\|market\|timeframe 매칭. 스캐너/종목상세 목록은 무변경(노이즈 방지). mock 패리티, typecheck/build/smoke 0에러, 홈 4카드 적중률 렌더·표본없는 카드 미표시 확인 |
+| R138 | **decimalString·ratioPct lib 추출 + 테스트** (FE) — 모의투자 로컬 수량/비율 헬퍼를 `lib/format`로 추출+테스트. vitest 41/41, tsc/build 통과 |
 | R137 | **조건검색 빈도등급/매치율 단위 테스트** (BE, 회귀 보호) — R24 `matchRate`·`frequencyGrade` package-private+6케이스(가드·HALF_UP·등급 경계). ASCII 경로 그린, 로직 무변경 |
 | R136 | **조건검색 비교 로직 추출 + 테스트** (BE, 회귀 보호) — 스캐너 핵심 연산자 비교를 `ConditionScannerService.compare`로 추출(순수)+5케이스(경계·null·미지원). ASCII 경로 그린, 동작 동일 |
 | R135 | **R77 실질 무효화가 실측 예시 회귀 고정** (BE, 테스트) — `thresholdPrice(89.25,0.03)=86.5725`(/signals/275 실측) assertion 추가. ASCII 경로 그린, 소스 무변경 |
