@@ -162,6 +162,7 @@
 | R87 | **API_CONTRACT.md 동기화** (문서) — R74(→R73) 이후 R77~R86 계약 델타 미반영분을 문서↔코드 정적 대조로 반영: **누락 엔드포인트 2개**(`/signals/{id}/performance`·`/signals/performance/summary` — 해자, FE가 쓰는데 계약서에 없었음) 추가, R77 무효화 완충(`invalidation{rule,price,buffer_pct,effective_price}`), R85 `expires_at`, R79 `helpful` 필수(400), R80 IMALOL c_target, R49/R78 에러 정규화(404/403). 코드 무변경 |
 | R88 | **PROJECT_STATUS 통계 드리프트 교정** (문서) — 단일 진입 문서 §2.1이 코드 실측과 어긋나 있던 것을 실측으로 갱신: 컨트롤러 28→**33**, 엔드포인트 ~78→**~89**, 마이그레이션 V1~V24→**V1~V28**, FE 라우트 14→**16**·TS ~12,057→**~14,200줄**. 기준일 2026-09-08→2026-09-13. 코드 무변경(정적 카운트로 검증) |
 | R89 | **홈 주목신호 카드 과거 적중률 칩** (FE, R86 확장) — 큐레이션 카드에서 열어보기 전에 pattern base-rate로 triage. `SignalCard`에 opt-in `perfHint`(표본≥10일 때만 "과거 적중 X%(nN)"), `top-signals`가 `/signals/performance/summary`를 1회 조회해 type\|market\|timeframe 매칭. 스캐너/종목상세 목록은 무변경(노이즈 방지). mock 패리티, typecheck/build/smoke 0에러, 홈 4카드 적중률 렌더·표본없는 카드 미표시 확인 |
+| R193 | **데모 지표 요약(getIndicators) 관계식 단위 테스트** (FE, 회귀 보호) — 볼린저 중앙선=MA20·밴드 정렬·RSI 밴드·MACD 히스토그램 항등 +2. vitest 8파일 123개 그린(121→+2). 코드 무변경 |
 | R192 | **데모 캔들 생성기(genCandles) 불변식 단위 테스트** (FE, 회귀 보호) — OHLC 유효성·연속성(open=직전close)·균등간격·시드 결정성 +4. vitest 8파일 121개 그린(117→+4). 코드 무변경 |
 | R191 | **데모 신호 상세(getSignalDetail) 조회/유효기간/알고버전 단위 테스트** (FE, 회귀 보호) — 접두사 관용 조회·유효기간 탐지+30일·타입별 algorithm_version +3. vitest 8파일 117개 그린(114→+3). mockData 상세 getter 전수 커버. 코드 무변경 |
 | R190 | **데모 신호 성과(getSignalPerformance) 조회/분기 단위 테스트** (FE, 회귀 보호) — 전체id/숫자접미사 조회·비-fresh 5지평·too-fresh 빈지평·미존재 null +4. vitest 8파일 114개 그린(110→+4). 코드 무변경 |
