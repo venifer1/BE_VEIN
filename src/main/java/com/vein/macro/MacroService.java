@@ -268,7 +268,7 @@ public class MacroService {
         return new DollarIndex(latest.value().toPlainString(), trend, latest.date());
     }
 
-    private static BigDecimal parse(String s) {
+    static BigDecimal parse(String s) {
         if (s == null || s.isBlank()) {
             return null;
         }
@@ -283,11 +283,11 @@ public class MacroService {
         return o == null ? null : o.value().toPlainString();
     }
 
-    private static String plain(BigDecimal v) {
+    static String plain(BigDecimal v) {
         return v == null ? null : v.toPlainString();
     }
 
-    private static String signed(BigDecimal v) {
+    static String signed(BigDecimal v) {
         return v.signum() >= 0 ? "+" + v.toPlainString() : v.toPlainString();
     }
 }

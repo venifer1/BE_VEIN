@@ -2,6 +2,7 @@ package com.vein.macro;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -59,5 +60,29 @@ class MacroServiceTest {
         assertThat(r.score()).isEqualTo(3);
         assertThat(r.signals()).hasSize(1);
         assertThat(r.summary()).isNotBlank();
+    }
+
+    // --- 지표 표기 순수 헬퍼 (R198) ---
+
+    @Test
+    void parse_safelyHandlesNullBlankAndBadInput() {
+        assertThat(MacroService.parse(null)).isNull();
+        assertThat(MacroService.parse("  ")).isNull();
+        assertThat(MacroService.parse("abc")).isNull();
+        assertThat(MacroService.parse("3.5")).isEqualByComparingTo("3.5");
+        assertThat(MacroService.parse("-2")).isEqualByComparingTo("-2");
+    }
+
+    @Test
+    void plain_isNullSafePlainString() {
+        assertThat(MacroService.plain(null)).isNull();
+        assertThat(MacroService.plain(new BigDecimal("1E-8"))).isEqualTo("0.00000001");
+    }
+
+    @Test
+    void signed_prependsPlusForNonNegative() {
+        assertThat(MacroService.signed(new BigDecimal("1.5"))).isEqualTo("+1.5");
+        assertThat(MacroService.signed(BigDecimal.ZERO)).isEqualTo("+0");
+        assertThat(MacroService.signed(new BigDecimal("-3"))).isEqualTo("-3");
     }
 }
