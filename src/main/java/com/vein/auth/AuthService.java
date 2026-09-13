@@ -95,7 +95,7 @@ public class AuthService {
         return new SignupResult(new AuthResult(access, refresh, jwtService.accessTtlSeconds(), user), user);
     }
 
-    private static String trimTo(String s, int max) {
+    static String trimTo(String s, int max) {
         if (s == null) {
             return null;
         }
