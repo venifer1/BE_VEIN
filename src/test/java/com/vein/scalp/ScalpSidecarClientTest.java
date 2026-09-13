@@ -28,4 +28,25 @@ class ScalpSidecarClientTest {
         assertThat(ScalpSidecarClient.ratio(1, 3)).isEqualTo("0.3333"); // 0.33333 → 0.3333
         assertThat(ScalpSidecarClient.ratio(2, 3)).isEqualTo("0.6667"); // 0.66666 → 0.6667
     }
+
+    // --- 체결 방향 분류(대소문자 무시 휴리스틱) (R171) ---
+
+    @Test
+    void isBuy_startsWithBorBid() {
+        assertThat(ScalpSidecarClient.isBuy("buy")).isTrue();
+        assertThat(ScalpSidecarClient.isBuy("BID")).isTrue();
+        assertThat(ScalpSidecarClient.isBuy("bid")).isTrue();
+        assertThat(ScalpSidecarClient.isBuy("sell")).isFalse();
+        assertThat(ScalpSidecarClient.isBuy("ask")).isFalse();
+    }
+
+    @Test
+    void isAsk_startsWithAorSorSell() {
+        assertThat(ScalpSidecarClient.isAsk("ask")).isTrue(); // A로 시작
+        assertThat(ScalpSidecarClient.isAsk("SELL")).isTrue();
+        assertThat(ScalpSidecarClient.isAsk("sell")).isTrue(); // S로 시작
+        assertThat(ScalpSidecarClient.isAsk("short")).isTrue(); // S로 시작
+        assertThat(ScalpSidecarClient.isAsk("buy")).isFalse();
+        assertThat(ScalpSidecarClient.isAsk("bid")).isFalse();
+    }
 }

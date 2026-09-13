@@ -169,12 +169,12 @@ public class ScalpSidecarClient {
         }
     }
 
-    private static boolean isBuy(String side) {
+    static boolean isBuy(String side) {
         String s = side.toUpperCase();
         return s.startsWith("B") || s.equals("BID");
     }
 
-    private static boolean isAsk(String side) {
+    static boolean isAsk(String side) {
         String s = side.toUpperCase();
         return s.startsWith("A") || s.equals("SELL") || s.startsWith("S");
     }
