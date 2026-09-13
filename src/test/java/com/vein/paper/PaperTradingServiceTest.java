@@ -1,10 +1,13 @@
 package com.vein.paper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 
 import org.junit.jupiter.api.Test;
+
+import com.vein.common.ApiException;
 
 /**
  * 모의투자 금액/수량/수익률 문자열 표기 순수 로직 회귀 보호(R156).
@@ -43,5 +46,55 @@ class PaperTradingServiceTest {
     void zeroRendersAsPlainZero() {
         assertThat(PaperTradingService.money(bd("0"))).isEqualTo("0");
         assertThat(PaperTradingService.pct(bd("0.0000"))).isEqualTo("0");
+    }
+
+    // --- 주문 입력 정규화(기본값·대소문자·트림·검증) (R163) ---
+
+    @Test
+    void normalizeSide_defaultsBuyAndValidates() {
+        assertThat(PaperTradingService.normalizeSide(null)).isEqualTo("BUY");
+        assertThat(PaperTradingService.normalizeSide("  ")).isEqualTo("BUY");
+        assertThat(PaperTradingService.normalizeSide(" sell ")).isEqualTo("SELL");
+        assertThatThrownBy(() -> PaperTradingService.normalizeSide("HOLD"))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void normalizeType_defaultsMarketAndValidates() {
+        assertThat(PaperTradingService.normalizeType(null)).isEqualTo("MARKET");
+        assertThat(PaperTradingService.normalizeType("limit")).isEqualTo("LIMIT");
+        assertThatThrownBy(() -> PaperTradingService.normalizeType("STOP"))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void normalizeInvestmentType_defaultsSpotAndValidates() {
+        assertThat(PaperTradingService.normalizeInvestmentType(null)).isEqualTo("SPOT");
+        assertThat(PaperTradingService.normalizeInvestmentType("futures")).isEqualTo("FUTURES");
+        assertThatThrownBy(() -> PaperTradingService.normalizeInvestmentType("MARGIN"))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void normalizePositionSide_onlyForFuturesWithDefaultFromSide() {
+        // 현물이면 항상 null
+        assertThat(PaperTradingService.normalizePositionSide("LONG", "BUY", "SPOT")).isNull();
+        // 선물 + 미지정 → side로 유추(BUY→LONG, SELL→SHORT)
+        assertThat(PaperTradingService.normalizePositionSide(null, "BUY", "FUTURES")).isEqualTo("LONG");
+        assertThat(PaperTradingService.normalizePositionSide("", "SELL", "FUTURES")).isEqualTo("SHORT");
+        // 선물 + 명시 → 대소문자 무시
+        assertThat(PaperTradingService.normalizePositionSide("short", "BUY", "FUTURES")).isEqualTo("SHORT");
+        assertThatThrownBy(() -> PaperTradingService.normalizePositionSide("SIDEWAYS", "BUY", "FUTURES"))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void leverage_oneForSpotCappedAt50ForFutures() {
+        assertThat(PaperTradingService.leverage("10", "SPOT")).isEqualByComparingTo("1"); // 현물 무시
+        assertThat(PaperTradingService.leverage(null, "FUTURES")).isEqualByComparingTo("1"); // 기본 1
+        assertThat(PaperTradingService.leverage("10", "FUTURES")).isEqualByComparingTo("10");
+        assertThat(PaperTradingService.leverage("50", "FUTURES")).isEqualByComparingTo("50"); // 경계 허용
+        assertThatThrownBy(() -> PaperTradingService.leverage("51", "FUTURES"))
+                .isInstanceOf(ApiException.class); // 50x 초과 거부
     }
 }

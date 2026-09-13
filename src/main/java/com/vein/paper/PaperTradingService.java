@@ -291,7 +291,7 @@ public class PaperTradingService {
                 TimeUtil.toIso(fill.getFilledAt()));
     }
 
-    private static String normalizeSide(String side) {
+    static String normalizeSide(String side) {
         if (side == null || side.isBlank()) {
             return "BUY";
         }
@@ -302,7 +302,7 @@ public class PaperTradingService {
         return normalized;
     }
 
-    private static String normalizeType(String type) {
+    static String normalizeType(String type) {
         if (type == null || type.isBlank()) {
             return "MARKET";
         }
@@ -313,7 +313,7 @@ public class PaperTradingService {
         return normalized;
     }
 
-    private static String normalizeInvestmentType(String investmentType) {
+    static String normalizeInvestmentType(String investmentType) {
         if (investmentType == null || investmentType.isBlank()) {
             return "SPOT";
         }
@@ -324,7 +324,7 @@ public class PaperTradingService {
         return normalized;
     }
 
-    private static String normalizePositionSide(String positionSide, String side, String investmentType) {
+    static String normalizePositionSide(String positionSide, String side, String investmentType) {
         if (!"FUTURES".equals(investmentType)) {
             return null;
         }
@@ -338,7 +338,7 @@ public class PaperTradingService {
         return normalized;
     }
 
-    private static BigDecimal leverage(String raw, String investmentType) {
+    static BigDecimal leverage(String raw, String investmentType) {
         if (!"FUTURES".equals(investmentType)) {
             return BigDecimal.ONE;
         }
