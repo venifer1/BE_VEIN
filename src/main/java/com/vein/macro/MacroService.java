@@ -157,8 +157,11 @@ public class MacroService {
         return new Snapshot(regime, yc, m2(), dxy, TimeUtil.toIso(java.time.Instant.now()), sources);
     }
 
-    /** BULL/BEAR/RANGE/TRANSITION from the summed score + signal agreement. */
-    private static Regime label(int score, List<Signal> signals) {
+    /**
+     * BULL/BEAR/RANGE/TRANSITION from the summed score + signal agreement.
+     * Package-private for unit testing (R132) — pure, no dependencies.
+     */
+    static Regime label(int score, List<Signal> signals) {
         long bull = signals.stream().filter(s -> "BULLISH".equals(s.direction())).count();
         long bear = signals.stream().filter(s -> "BEARISH".equals(s.direction())).count();
         String label;
