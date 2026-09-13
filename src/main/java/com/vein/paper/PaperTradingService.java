@@ -364,15 +364,15 @@ public class PaperTradingService {
         }
     }
 
-    private static String money(BigDecimal value) {
+    static String money(BigDecimal value) {
         return value.setScale(8, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
     }
 
-    private static String qty(BigDecimal value) {
+    static String qty(BigDecimal value) {
         return value.setScale(8, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
     }
 
-    private static String pct(BigDecimal value) {
+    static String pct(BigDecimal value) {
         return value.setScale(4, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
     }
 }
