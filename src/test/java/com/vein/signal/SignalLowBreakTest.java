@@ -56,5 +56,8 @@ class SignalLowBreakTest {
         // null/음수 버퍼는 0으로 취급 → 기준선 그대로
         assertThat(SignalStatusTransitionService.thresholdPrice(A, null)).isEqualByComparingTo("100");
         assertThat(SignalStatusTransitionService.thresholdPrice(A, new BigDecimal("-0.1"))).isEqualByComparingTo("100");
+        // R77 실측 예시(/signals/275): 89.25 × 0.97 = 86.5725 — 반올림 드리프트 고정
+        assertThat(SignalStatusTransitionService.thresholdPrice(new BigDecimal("89.25"), BUF3))
+                .isEqualByComparingTo("86.5725");
     }
 }
