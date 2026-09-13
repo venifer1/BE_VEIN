@@ -161,11 +161,11 @@ public class WebPushService {
         return !publicKey.isBlank() && !privateKey.isBlank();
     }
 
-    private static String normalize(String value) {
+    static String normalize(String value) {
         return value == null ? "" : value.trim();
     }
 
-    private static String trimToNull(String value) {
+    static String trimToNull(String value) {
         if (value == null || value.isBlank()) {
             return null;
         }
