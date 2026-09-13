@@ -38,7 +38,12 @@
 | Method | Path | 설명 |
 |---|---|---|
 | GET | `/market/indices` | 공포탐욕(value,classification), BTC도미넌스, USDT도미넌스, 알트지수, 나스닥/코스피/코스닥 지수 |
+| GET | `/market/indices/{key}/history` | `?days=(기본 30)` 지수 히스토리 라인 `[{t,value}]`(홈 스파크라인용). key=FEAR_GREED\|BTC_DOMINANCE\|NASDAQ 등 |
+| GET | `/market/fear-greed/history` | `?days=(기본 30)` 공포탐욕 히스토리 `[{t,value,...}]` |
 | GET | `/market/kimchi-premium` | `?sort=` 업비트(KRW) vs 바이낸스(USDT) 김프 목록(symbol, upbit_price, binance_price, usdkrw, premium_pct), BTC/ETH/XRP 상단고정 |
+| GET | `/market/movers` | `?market=CRYPTO\|US\|KOSPI\|KOSDAQ(기본 CRYPTO)&type=GAINERS\|LOSERS\|VOLUME(기본 GAINERS)&limit=(기본 20)` 급등/급락/거래량 상위(symbol,name,price,change_rate,instrument_id?) |
+| GET | `/market/trending` | CoinGecko 트렌딩(rank,name,symbol,thumb,coingecko_id,market_cap_rank). 종목 매핑 없어 비네비게이션 |
+| GET | `/market/global` | 글로벌 코인시장 요약(total_market_cap_usd, total_volume_usd, market_cap_change24h_pct) |
 | GET | `/instruments` | `?q=&market=&status=` 4시장 통합검색(초성검색 포함), 최대 30 |
 | GET | `/instruments/{id}` | 종목 상세 메타 |
 | GET | `/instruments/{id}/candles` | `?timeframe=&from=&to=&limit=` 정렬 OHLCV + provider + freshness |
@@ -98,10 +103,23 @@
 | GET | `/themes/{id}/constituents` | 구성종목 + 분류 source/confidence |
 | GET | `/funding-arb` | `?sort=` 업비트 현물 vs Bybit 선물 펀딩비 차익(symbol, funding_pct, upbit_price, bybit_price, next_funding_at, expected_1x_pct, expected_2x_pct). 수수료 Upbit 0.05%/Bybit 0.055% 왕복 반영 |
 
+## 6-1. 파생 (무기한 선물·청산) — `derivatives`
+> R94 문서화: 그동안 계약서에 누락됐던 실동작 엔드포인트.
+
+| Method | Path | 설명 |
+|---|---|---|
+| GET | `/derivatives` | `?limit=(기본 20)` 무기한 선물 목록(symbol, perp, mark_price, funding_rate, oi_value_usd, long_short_ratio, next_funding_at). 홈/데이터 "파생" 탭 |
+| GET | `/derivatives/{symbol}` | 종목 파생 상세 + 롱숏/OI 히스토리(추이 차트용) |
+| GET | `/liquidations` | `?limit=(기본 100)&min_notional=(기본 10000)&symbol=` 강제청산 스트림 스냅샷 |
+| GET | `/liquidations/summary` | `?symbol=` 청산 집계(급증 감지 근거). 데이터 "청산" 탭 |
+
+- **펀딩비**: 선물 보유 시 주고받는 수수료(+면 롱 지불). **미결제약정(OI)**: 청산 안 된 선물 계약 규모. (R93 UI 병기)
+
 ## 7. 알림 — `alert`/`notification` (패턴 3종 + 가격 지원)
 | GET `/alerts` (목록) | POST `/alerts` `{instrument_id, signal_type(ABC/TOP/IMALOL), timeframe, market, cooldown_sec}` | PATCH `/alerts/{id}` `{enabled,cooldown_sec}` | **DELETE `/alerts/{id}`**(R62, 소유자만·404 IDOR-safe) |
 | POST `/alerts` **FREE 플랜 최대 10개**(초과 `402 PLAN_LIMIT_EXCEEDED`, R56) |
 | GET `/notifications?unread_only&cursor` | PATCH `/notifications/{id}/read` · **POST `/notifications/read-all`**(활성 안읽음 일괄 읽음→`{updated}`, R63) · POST `/notifications/{id}/deliveries/web-push` (브라우저 표시 성공 멱등 확인) |
+| GET `/notifications/web-push/config` (VAPID 공개키) · POST `/notifications/web-push/subscription` (브라우저 푸시 구독 등록) | 백그라운드 웹푸시(R27, VAPID). 구독 후 서버가 알림 생성 시 푸시 발송 |
 | GET `/notifications/digest?window=` | 읽기 시점 요약(R45·R51): 창(시간, 기본 24·최대 168) 내 알림을 분류(SIGNAL/SCANNER/LIQUIDATION/SYSTEM)별 집계 + 안읽은 최신 표본 + `released`(스풀링 방출 수) + 요약 문장. 보류 중(held_until>now)은 제외 |
 | GET/PUT `/me/notification-prefs` | 조용한 시간(R42): `{quiet_enabled, quiet_start_hour, quiet_end_hour}`(KST 0-23). 창 동안 온 알림은 **드롭이 아니라 보류(R46 스풀링)**, 창 종료 시 방출. start>end면 자정 넘김, start==end면 창 없음 |
 | GET `/me/onboarding` · POST `/me/onboarding/dismiss` | "시작하기" 체크리스트(R48): 관심종목·알림·모의투자·조건검색 스텝 완료를 실제 데이터에서 파생 + 진행률 + 닫힘. 스텝: `{key,label,done,href}` |
