@@ -68,6 +68,23 @@
 
 - **무효화 완충(R53·R77)** — `GET /signals/{id}`의 `invalidation` = `{rule, price, buffer_pct, effective_price}`. 저가-이탈 규칙(ABC A저점·TOP B저점)은 `price`(기준선)를 1틱만 깨도 죽지 않고 **`effective_price = price × (1 − buffer_pct)`** 아래로 저가가 내려가야 무효 처리(노이즈/꼬리 흡수). `buffer_pct`는 `vein.signal.invalidation-buffer-pct`(기본 0.03) 파생. 완충 없는 규칙은 `buffer_pct`/`effective_price` 둘 다 null. FE 카드는 R:R 거리를 `effective_price` 우선으로 계산.
 
+## 4-1. 검증 도구 (백테스트·전략·모의투자) — `backtest`/`strategy`/`paper`
+> R92 문서화: 그동안 계약서에 누락됐던 실동작 엔드포인트. 코드(`*Controller`/`*Dto`)와 정적 대조.
+
+| Method | Path | 설명 |
+|---|---|---|
+| POST | `/backtests/run` | 패턴 백테스트(기획서 §11): `{type(ABC\|TOP\|IMALOL), market?, timeframe?, targetPct, stopPct, horizon(1h\|4h\|1d\|3d\|7d), periodDays?, feePct?, walkForward?, isRatio?}`. 응답 `{params, metrics{trade_count,win_rate,avg_return_pct,total_return_pct,profit_factor,max_drawdown_pct,best_pct,worst_pct,avg_hold_bars,skipped}, equity_curve[]{t,equity}, trades[]{symbol,name,detected_at,entry,exit,return_pct,outcome,exit_at}, walk_forward?{is_ratio,split_at,in_sample,out_of_sample,overfit_warning}}`. `walk_forward`는 요청 `walk_forward=true`일 때만(과적합 경고). |
+| GET/POST | `/strategies` | 저장 전략 목록 / 저장 `{name, params(JSON), metrics(JSON)}`. 응답 `{id,name,type,market,timeframe,params,metrics,created_at}` |
+| GET/DELETE | `/strategies/{id}` | 단건 조회 / 삭제(소유자만·204) |
+| POST | `/strategies/{id}/run` | 저장 파라미터로 백테스트 재실행 → 성과 스냅샷 적재. 응답 `RunSnapshot{id,strategy_id,metrics,trade_count,total_return_pct,win_rate,run_at}` |
+| GET | `/strategies/{id}/history` | 재실행 성과 스냅샷 이력(시간순) `RunSnapshot[]` |
+| POST | `/paper/accounts` | 모의계정 생성 or 리셋(create-or-reset) `{initial_balance, base_currency}`. 응답 `AccountResponse{id,base_currency,initial_balance,...}` |
+| POST | `/paper/orders` | 모의 주문(즉시 체결) `{instrument_id, signal_id?, side(BUY\|SELL), type(MARKET\|LIMIT), investment_type(SPOT\|FUTURES), position_side(LONG\|SHORT)?, price?(비우면 최신가), quantity, leverage?, reduce_only?, timeframe?}`. 응답 `OrderResponse{id,account_id,instrument_id,symbol,name(R91),signal_id,investment_type,position_side,side,type,price,quantity,leverage,reduce_only,status,fill?}`. 잔액부족·보유초과 등 `400` |
+| GET | `/paper/portfolio` | `{account, equity, unrealized_pnl, realized_pnl, positions[]{instrument_id,symbol,name,quantity,investment_type,position_side,avg_price,mark_price,market_value,margin,leverage,unrealized_pnl,realized_pnl}, recent_orders[](OrderResponse, 최근 20)}` |
+| GET | `/paper/performance` | `{account_id, total_return_pct, equity, realized_pnl, unrealized_pnl, open_positions}` |
+
+- **컴플라이언스** — 모의투자는 가상 현금·포지션만 기록(실거래소 주문·실자금 없음). 신호 상세 "다음 액션"이 여기로 연결(코인=선물 롱/숏+레버리지, 주식=현물 매수, R84).
+
 ## 5. 속보 — `news`
 | GET | `/news` | `?source=TELEGRAM\|BLOOMBERG & cursor` 항목(source, title, body, url, published_at, is_new). 서버가 텔레그램(coinnesskr)+Bloomberg RSS 수집·중계, 앱은 읽기 |
 
