@@ -125,7 +125,7 @@ public class TvlService {
         log.debug("TVL refresh saved {} rows", saved);
     }
 
-    private static String normalizeMode(String mode) {
+    static String normalizeMode(String mode) {
         if (mode == null || mode.isBlank()) {
             return PROTOCOL;
         }
@@ -136,7 +136,7 @@ public class TvlService {
         return m;
     }
 
-    private static String plain(BigDecimal v) {
+    static String plain(BigDecimal v) {
         return v == null ? null : v.toPlainString();
     }
 }
