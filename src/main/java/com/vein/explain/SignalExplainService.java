@@ -59,6 +59,54 @@ public class SignalExplainService {
     public SignalExplainDto explain(Long id) {
         PatternSignal signal = signalRepository.findById(id)
                 .orElseThrow(() -> new ApiException(ErrorCode.SIGNAL_NOT_FOUND));
+        Assessment a = assess(signal);
+        PatternScoreCalculator.Scores scores = a.scores();
+
+        SummaryRow performance = performanceService.summary(
+                        signal.getType(), signal.getMarket(), signal.getTimeframe(), "1d").stream()
+                .findFirst().orElse(null);
+        SignalExplainDto.Confidence confidence = confidence(performance);
+
+        List<String> reasons = reasons(signal, a.volumeRatio(), a.indicators(), a.positiveNews());
+        List<String> risks = risks(signal, a.averageRangePct(), a.indicators(), a.negativeNews(), confidence);
+        List<String> nextChecks = nextChecks(signal);
+        String riskGuard = riskGuard(signal, a.averageRangePct(), a.indicators());
+
+        List<SignalExplainDto.ScoreFactor> factors = List.of(
+                new SignalExplainDto.ScoreFactor("COMPLETION", "패턴 완성도", scores.completion(),
+                        properties.completionWeight(), "탐지기 구조 점수 " + value(signal.getScore(), "점")),
+                new SignalExplainDto.ScoreFactor("VOLUME", "거래량 증가", scores.volume(),
+                        properties.volumeWeight(), "최근 거래량/20봉 평균 " + value(a.volumeRatio(), "배")),
+                new SignalExplainDto.ScoreFactor("TREND", "추세 강도", scores.trend(),
+                        properties.trendWeight(), trendDetail(a.currentPrice(), a.ma5(), a.ma20(), a.macdHistogram(), a.rsi())),
+                new SignalExplainDto.ScoreFactor("VOLATILITY", "변동성 적정성", scores.volatility(),
+                        properties.volatilityWeight(), "최근 평균 고저폭 " + value(a.averageRangePct(), "%")),
+                new SignalExplainDto.ScoreFactor("NEWS", "뉴스 모멘텀", scores.news(),
+                        properties.newsWeight(), "관련 긍정 " + a.positiveNews() + "건 · 부정 " + a.negativeNews() + "건"));
+
+        return new SignalExplainDto(
+                "sig_" + signal.getId(), scores.total(), riskGuard, factors,
+                reasons, risks, nextChecks, confidence, TEMPLATE_VERSION);
+    }
+
+    /**
+     * 종합 Pattern Score(0~100 총점)만 계산한다. Explain 전체(근거·위험·Confidence)를 만들지 않고
+     * 점수만 필요할 때(예: {@code SignalPatternScoreService}의 top 정렬 영속화, R90) 쓰는 경량 진입점.
+     * explain()과 동일한 입력 수집·계산 경로({@link #assess})를 공유해 두 값이 절대 어긋나지 않는다.
+     */
+    public int computeScore(PatternSignal signal) {
+        return assess(signal).scores().total();
+    }
+
+    /** explain()과 pattern-score 영속화가 공유하는 입력 수집 + 점수 계산 결과. */
+    private record Assessment(BigDecimal volumeRatio, BigDecimal averageRangePct,
+                             IndicatorSummary indicators, BigDecimal currentPrice, BigDecimal ma5,
+                             BigDecimal ma20, BigDecimal macdHistogram, BigDecimal rsi,
+                             int positiveNews, int negativeNews,
+                             PatternScoreCalculator.Scores scores) {
+    }
+
+    private Assessment assess(PatternSignal signal) {
         Instrument instrument = instrumentRepository.findById(signal.getInstrumentId()).orElse(null);
 
         List<Candle> candles = candleRepository.findLatest(
@@ -93,31 +141,8 @@ public class SignalExplainService {
                 negativeNews);
         PatternScoreCalculator.Scores scores = PatternScoreCalculator.calculate(inputs, properties);
 
-        SummaryRow performance = performanceService.summary(
-                        signal.getType(), signal.getMarket(), signal.getTimeframe(), "1d").stream()
-                .findFirst().orElse(null);
-        SignalExplainDto.Confidence confidence = confidence(performance);
-
-        List<String> reasons = reasons(signal, volumeRatio, indicators, positiveNews);
-        List<String> risks = risks(signal, averageRangePct, indicators, negativeNews, confidence);
-        List<String> nextChecks = nextChecks(signal);
-        String riskGuard = riskGuard(signal, averageRangePct, indicators);
-
-        List<SignalExplainDto.ScoreFactor> factors = List.of(
-                new SignalExplainDto.ScoreFactor("COMPLETION", "패턴 완성도", scores.completion(),
-                        properties.completionWeight(), "탐지기 구조 점수 " + value(signal.getScore(), "점")),
-                new SignalExplainDto.ScoreFactor("VOLUME", "거래량 증가", scores.volume(),
-                        properties.volumeWeight(), "최근 거래량/20봉 평균 " + value(volumeRatio, "배")),
-                new SignalExplainDto.ScoreFactor("TREND", "추세 강도", scores.trend(),
-                        properties.trendWeight(), trendDetail(currentPrice, ma5, ma20, macdHistogram, rsi)),
-                new SignalExplainDto.ScoreFactor("VOLATILITY", "변동성 적정성", scores.volatility(),
-                        properties.volatilityWeight(), "최근 평균 고저폭 " + value(averageRangePct, "%")),
-                new SignalExplainDto.ScoreFactor("NEWS", "뉴스 모멘텀", scores.news(),
-                        properties.newsWeight(), "관련 긍정 " + positiveNews + "건 · 부정 " + negativeNews + "건"));
-
-        return new SignalExplainDto(
-                "sig_" + signal.getId(), scores.total(), riskGuard, factors,
-                reasons, risks, nextChecks, confidence, TEMPLATE_VERSION);
+        return new Assessment(volumeRatio, averageRangePct, indicators, currentPrice, ma5, ma20,
+                macdHistogram, rsi, positiveNews, negativeNews, scores);
     }
 
     private IndicatorSummary safeIndicators(PatternSignal signal) {

@@ -59,7 +59,7 @@
 
 | 저장소 | 스택 | 규모 | 상태 |
 |---|---|---|---|
-| **BE_VEIN** | Spring Boot 3.3 · Java 21 · PostgreSQL 16 · Redis 7 · Flyway | Java · 33 컨트롤러 · **약 89개 엔드포인트** · 마이그레이션 V1~V28 | 실동작 |
+| **BE_VEIN** | Spring Boot 3.3 · Java 21 · PostgreSQL 16 · Redis 7 · Flyway | Java · 33 컨트롤러 · **약 89개 엔드포인트** · 마이그레이션 V1~V29 | 실동작 |
 | **FE_VEIN** | Next.js 14 App Router · TS · Tailwind/shadcn · lightweight-charts · TanStack Query | TS 약 14,200줄 · 16 라우트 · **약 60개 엔드포인트 사용** | 실동작 |
 | **APP_VEIN** | Flutter (Dart 3) · riverpod · go_router · dio · fl_chart | Dart 7,614줄 · 12 라우트 · **22개 엔드포인트 사용** | **크게 지연** |
 | **사이드카** | Python · yfinance · pykrx · telethon · Upbit WS | — | **SIDECAR_VEIN 별도 저장소로 분리**(`requirements.txt`로 standalone 실행 가능). 실행은 레거시 venv도 허용 |
@@ -156,7 +156,8 @@
 | R86 | **신호 상세에 "이 패턴 과거 성과(base rate)" 노출** (FE) — 성과 패널이 이 신호 자체 실현수익만 보여줘 갓 탐지된 신호(판단이 가장 필요한 순간)엔 "측정 대기"만 뜨던 것을, 성과 카드 최상단에 같은 유형(type·market·timeframe) 과거 `표본 N·1일 적중률·평균`을 `/signals/performance/summary`(스캐너 스트립과 동일 데이터) 재사용으로 노출(표본<20 "참고만" 배지). 해자(실측 적중률)를 개별 신호 판단 지점에서 바로 확인. 신규 API 없음, mock 패리티. typecheck/build/mock smoke 0에러, 상세(ABC·CRYPTO·4h) 표본42·61.9%·+3.20% 렌더 확인 |
 | R87 | **API_CONTRACT.md 동기화** (문서) — R74(→R73) 이후 R77~R86 계약 델타 미반영분을 문서↔코드 정적 대조로 반영: **누락 엔드포인트 2개**(`/signals/{id}/performance`·`/signals/performance/summary` — 해자, FE가 쓰는데 계약서에 없었음) 추가, R77 무효화 완충(`invalidation{rule,price,buffer_pct,effective_price}`), R85 `expires_at`, R79 `helpful` 필수(400), R80 IMALOL c_target, R49/R78 에러 정규화(404/403). 코드 무변경 |
 | R88 | **PROJECT_STATUS 통계 드리프트 교정** (문서) — 단일 진입 문서 §2.1이 코드 실측과 어긋나 있던 것을 실측으로 갱신: 컨트롤러 28→**33**, 엔드포인트 ~78→**~89**, 마이그레이션 V1~V24→**V1~V28**, FE 라우트 14→**16**·TS ~12,057→**~14,200줄**. 기준일 2026-09-08→2026-09-13. 코드 무변경(정적 카운트로 검증) |
-| R89 | **홈 주목신호 카드 과거 적중률 칩** (FE, R86 확장) — 큐레이션 카드에서 열어보기 전에 patttern base-rate로 triage. `SignalCard`에 opt-in `perfHint`(표본≥10일 때만 "과거 적중 X%(nN)"), `top-signals`가 `/signals/performance/summary`를 1회 조회해 type\|market\|timeframe 매칭. 스캐너/종목상세 목록은 무변경(노이즈 방지). mock 패리티, typecheck/build/smoke 0에러, 홈 4카드 적중률 렌더·표본없는 카드 미표시 확인 |
+| R89 | **홈 주목신호 카드 과거 적중률 칩** (FE, R86 확장) — 큐레이션 카드에서 열어보기 전에 pattern base-rate로 triage. `SignalCard`에 opt-in `perfHint`(표본≥10일 때만 "과거 적중 X%(nN)"), `top-signals`가 `/signals/performance/summary`를 1회 조회해 type\|market\|timeframe 매칭. 스캐너/종목상세 목록은 무변경(노이즈 방지). mock 패리티, typecheck/build/smoke 0에러, 홈 4카드 적중률 렌더·표본없는 카드 미표시 확인 |
+| R90 | **홈 주목신호 종합 Pattern Score 정렬** (BE, R81 백로그 해소) — `/signals/top`이 구조점수(완성도)로만 정렬해 "구조만 예쁘고 근거 빈약한" 신호가 상단이던 것을(실측: 구조92.2·종합46 신호가 top), 완성도+거래량+추세+변동성+뉴스 **종합 Pattern Score**로 정렬. V29 `pattern_signals.pattern_score`+부분인덱스, `SignalExplainService.computeScore`(explain과 동일 경로 공유), `SignalPatternScoreService`+스케줄러(기동 백필+15분 주기, ingestion 독립), `findTopByScore` → `coalesce(pattern_score,score)`. 라이브 검증: V29 적용, 활성111 백필, 종합순 top 반환(구조92.2·종합46 신호 탈락), 전체 테스트 그린. API/DTO 무변경 |
 
 ---
 

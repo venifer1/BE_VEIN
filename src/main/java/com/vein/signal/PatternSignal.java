@@ -57,6 +57,15 @@ public class PatternSignal {
     @Column
     private BigDecimal score;
 
+    /**
+     * 종합 Pattern Score(완성도·거래량·추세·변동성·뉴스, 0~100). 구조 점수({@code score})와 달리
+     * 지표·뉴스까지 반영한 큐레이션 점수로, 홈 "오늘의 주목 신호" 정렬에 쓴다(R90). 탐지 시점엔
+     * null일 수 있고 {@code SignalPatternScoreService}가 채운다 — 미계산 시 정렬은 {@code score}로 폴백.
+     */
+    @Setter
+    @Column(name = "pattern_score")
+    private BigDecimal patternScore;
+
     @Column(name = "c_target")
     private BigDecimal cTarget;
 

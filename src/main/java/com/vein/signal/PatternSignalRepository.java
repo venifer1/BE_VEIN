@@ -60,10 +60,14 @@ public interface PatternSignalRepository extends JpaRepository<PatternSignal, Lo
                                  Pageable pageable);
 
     /**
-     * Top fresh signals by structure score (R41, 신호 과다 완화). Only actionable
-     * statuses (DETECTED / NEAR_COMPLETION), non-null score, <b>and not past expiry</b>
-     * (R82: 스케줄러 전이 지연/게이트로 상태가 아직 active여도 시간상 만료된 신호는 후보에서 제외),
-     * optionally scoped by market, highest score first (ties broken newest-first).
+     * Top fresh signals by <b>composite Pattern Score</b> (R41 큐레이션, R90 정렬 개선).
+     * Only actionable statuses (DETECTED / NEAR_COMPLETION), non-null score, <b>and not past
+     * expiry</b> (R82: 스케줄러 전이 지연/게이트로 상태가 아직 active여도 시간상 만료된 신호는
+     * 후보에서 제외), optionally scoped by market.
+     *
+     * <p>정렬 키는 {@code coalesce(pattern_score, score)} — 완성도·거래량·추세·변동성·뉴스를
+     * 합산한 종합 점수(SignalPatternScoreService가 영속화, R90)가 있으면 그걸로, 아직 미계산이면
+     * 구조 점수로 폴백(하위호환). 동점은 최신순.
      */
     @Query("""
             select s from PatternSignal s
@@ -71,7 +75,7 @@ public interface PatternSignalRepository extends JpaRepository<PatternSignal, Lo
               and s.score is not null
               and (s.expiresAt is null or s.expiresAt > :now)
               and (:market is null or s.market = :market)
-            order by s.score desc, s.detectedAt desc, s.id desc
+            order by coalesce(s.patternScore, s.score) desc, s.detectedAt desc, s.id desc
             """)
     List<PatternSignal> findTopByScore(@Param("market") String market,
                                        @Param("now") Instant now, Pageable pageable);

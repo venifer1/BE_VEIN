@@ -51,7 +51,7 @@
 | Method | Path | 설명 |
 |---|---|---|
 | GET | `/signals` | `?type=ABC\|TOP\|IMALOL & market & timeframe & instrument_id & watchlist_only & status & near_only & active_only & cursor`. **`active_only=true`(R54)**면 DETECTED/NEAR_COMPLETION만(만료·무효 숨김). 기본 false(하위호환). 카드: type, market, instrument, timeframe, status, score, current_price, **c_target(ABC/TOP=C목표가·IMALOL=C예상가/projectedClose, R80)**, pivots 요약(0/A/B 일자), detected_at, freshness |
-| GET | `/signals/top` | 오늘의 주목 신호(R41): `?market=&limit=`(기본 10·최대 30). 활성 신호(DETECTED/NEAR_COMPLETION) Pattern Score 상위. 카드 형식은 `/signals`와 동일 |
+| GET | `/signals/top` | 오늘의 주목 신호(R41): `?market=&limit=`(기본 10·최대 30). 활성 신호(DETECTED/NEAR_COMPLETION)를 **종합 Pattern Score 상위**로 정렬(R90: `coalesce(pattern_score, score)` — 완성도+거래량+추세+변동성+뉴스 종합, 미계산 시 구조점수 폴백) + 종목별 dedup(R81) + 만료 제외(R82). 카드 형식은 `/signals`와 동일 |
 | GET | `/signals/{id}` | evidence(피벗/추세선/볼린저/매치박스), invalidation, c_target, chart_range, algorithm_version, **event_risk(R39, nullable)**, **expires_at(R85, nullable — 유효기간/만료 시각)** |
 | GET | `/signals/{id}/explain` | Pattern Score(완성도30·거래량20·추세20·변동성10·뉴스20), 규칙 기반 근거·위험·다음 확인, Risk Guard(PASS/WARN/BLOCK), 1d 성과 표본 기반 Confidence |
 | GET | `/signals/{id}/performance` | 이 신호의 탐지 후 실현 성과(§31): `{signal_id, detected_price, detected_at, horizons[]{horizon(1h\|4h\|1d\|3d\|7d), price, return_pct, mfe_pct, mae_pct, evaluated_at}}`. `horizons`는 경과·계산된 것만(너무 신선하면 빈 배열, 500 없음) |
