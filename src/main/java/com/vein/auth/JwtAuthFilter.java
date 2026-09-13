@@ -36,10 +36,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String header = request.getHeader("Authorization");
-        if (header != null && header.startsWith(BEARER_PREFIX)
+        String token = resolveBearerToken(request.getHeader("Authorization"));
+        if (token != null
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
-            String token = header.substring(BEARER_PREFIX.length()).trim();
             try {
                 Jws<Claims> jws = jwtService.parse(token);
                 Claims claims = jws.getPayload();
@@ -56,5 +55,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Authorization 헤더에서 Bearer 토큰을 추출한다. 헤더가 없거나 "Bearer " 접두사(대소문자
+     * 구분)로 시작하지 않으면 null. 접두사 뒤 값은 trim 한다. 순수 함수(테스트 용이).
+     */
+    static String resolveBearerToken(String header) {
+        if (header == null || !header.startsWith(BEARER_PREFIX)) {
+            return null;
+        }
+        return header.substring(BEARER_PREFIX.length()).trim();
     }
 }
