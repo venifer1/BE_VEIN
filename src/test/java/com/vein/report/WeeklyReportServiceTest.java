@@ -49,4 +49,27 @@ class WeeklyReportServiceTest {
         assertThat(WeeklyReportService.highlights(List.of(row("ABC", 4, "90")))).isEmpty();
         assertThat(WeeklyReportService.highlights(List.of())).isEmpty();
     }
+
+    @Test
+    void recoverHits_fromRoundedRate() {
+        assertThat(WeeklyReportService.recoverHits("60", 10)).isEqualTo(6);
+        assertThat(WeeklyReportService.recoverHits("61.9", 42)).isEqualTo(26); // 25.998 → 26
+        assertThat(WeeklyReportService.recoverHits(null, 10)).isEqualTo(0);
+        assertThat(WeeklyReportService.recoverHits("50", 0)).isEqualTo(0);
+    }
+
+    @Test
+    void pct_weightedRecompute() {
+        assertThat(WeeklyReportService.pct(6, 10)).isEqualTo("60.0");
+        assertThat(WeeklyReportService.pct(1, 3)).isEqualTo("33.3");
+        assertThat(WeeklyReportService.pct(0, 0)).isEqualTo("0.0");
+    }
+
+    @Test
+    void signed_formatsWithSign() {
+        assertThat(WeeklyReportService.signed("1.61")).isEqualTo("+1.61");
+        assertThat(WeeklyReportService.signed("-0.42")).isEqualTo("-0.42");
+        assertThat(WeeklyReportService.signed(null)).isEqualTo("0.00");
+        assertThat(WeeklyReportService.signed("")).isEqualTo("0.00");
+    }
 }

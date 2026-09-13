@@ -158,8 +158,8 @@ public class WeeklyReportService {
         return sb.toString();
     }
 
-    /** Recover the positive-return count from a rounded "hit_rate" and sample size. */
-    private static long recoverHits(String hitRate, long n) {
+    /** Recover the positive-return count from a rounded "hit_rate" and sample size. (R142: pkg-private for tests) */
+    static long recoverHits(String hitRate, long n) {
         if (hitRate == null || n == 0) {
             return 0;
         }
@@ -167,7 +167,7 @@ public class WeeklyReportService {
                 .divide(HUNDRED, 0, RoundingMode.HALF_UP).longValue();
     }
 
-    private static String pct(long hits, long total) {
+    static String pct(long hits, long total) {
         if (total == 0) {
             return "0.0";
         }
@@ -176,7 +176,7 @@ public class WeeklyReportService {
     }
 
     /** Human-facing signed percent rounded to 2 dp: "+1.61" / "-0.42" / "0.00" for null/blank. */
-    private static String signed(String v) {
+    static String signed(String v) {
         if (v == null || v.isBlank()) {
             return "0.00";
         }
