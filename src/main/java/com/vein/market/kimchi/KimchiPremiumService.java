@@ -163,21 +163,32 @@ public class KimchiPremiumService {
             }
             BigDecimal upbitPrice = upbitPrices.get(inst.getSymbol());
             BigDecimal binancePrice = binancePrices.get(binanceSymbol.toUpperCase());
-            if (upbitPrice == null || binancePrice == null || binancePrice.signum() <= 0) {
+            BigDecimal premiumPct = premiumPct(upbitPrice, binancePrice, usdkrw);
+            if (premiumPct == null) {
                 continue;
             }
-            BigDecimal baseKrw = binancePrice.multiply(usdkrw, MC);
-            if (baseKrw.signum() <= 0) {
-                continue;
-            }
-            BigDecimal premiumPct = upbitPrice.divide(baseKrw, MC)
-                    .subtract(BigDecimal.ONE)
-                    .multiply(BigDecimal.valueOf(100), MC)
-                    .setScale(4, RoundingMode.HALF_UP);
             repository.save(KimchiPremium.of(inst.getId(), upbitPrice, binancePrice,
                     usdkrw.setScale(6, RoundingMode.HALF_UP), premiumPct, now));
             saved++;
         }
         log.debug("kimchi refresh saved {} rows", saved);
+    }
+
+    /**
+     * 김치 프리미엄 = (업비트가 / (바이낸스가 × 환율) − 1) × 100, 소수 4자리 HALF_UP.
+     * 입력이 null이거나 바이낸스가/환산 원화가 0 이하이면 계산 불가 → null. 순수 함수.
+     */
+    static BigDecimal premiumPct(BigDecimal upbitPrice, BigDecimal binancePrice, BigDecimal usdkrw) {
+        if (upbitPrice == null || binancePrice == null || usdkrw == null || binancePrice.signum() <= 0) {
+            return null;
+        }
+        BigDecimal baseKrw = binancePrice.multiply(usdkrw, MC);
+        if (baseKrw.signum() <= 0) {
+            return null;
+        }
+        return upbitPrice.divide(baseKrw, MC)
+                .subtract(BigDecimal.ONE)
+                .multiply(BigDecimal.valueOf(100), MC)
+                .setScale(4, RoundingMode.HALF_UP);
     }
 }
